@@ -66,14 +66,18 @@ Start with the documentation hub:
 
 ## Roadmap
 
-- Plugin ecosystem
-- MCP support
-- Local models
-- Voice mode
-- Multi-agent workflows
-- VSCode extension
-- Web dashboard
-- Team collaboration
+- [x] First-run setup UI
+- [x] Live OpenRouter model discovery
+- [x] Approved AI file editing workflow
+- [x] Plugin system MVP
+- [x] MCP support MVP
+- [ ] Plugin marketplace
+- [ ] Local models
+- [ ] Voice mode
+- [ ] Multi-agent workflows
+- [ ] VSCode extension
+- [ ] Web dashboard
+- [ ] Team collaboration
 
 ## Contributing
 
