@@ -1,20 +1,14 @@
 import ora from "ora";
-import { OpenRouterClient } from "../ai/openrouter.js";
 import { contextPrompt, systemPrompt } from "../ai/prompts.js";
-import { loadConfig, readApiKey } from "../config/loadConfig.js";
+import { loadConfig } from "../config/loadConfig.js";
 import { buildContext } from "../context/fileScanner.js";
 import { appendHistory, readHistory } from "../memory/sessionMemory.js";
 import { createPluginRuntime } from "../plugins/core/pluginManager.js";
+import { createAiProvider } from "../providers/registry/providerRegistry.js";
 import { renderMarkdown } from "../terminal/render.js";
-import { UserFacingError } from "../utils/errors.js";
 
 export async function askCommand(prompt: string, cwd = process.cwd()): Promise<void> {
   const config = await loadConfig(cwd);
-  const apiKey = readApiKey();
-
-  if (!apiKey) {
-    throw new UserFacingError("Missing OPENROUTER_API_KEY");
-  }
 
   const spinner = ora("Building context").start();
   const files = await buildContext(cwd, config, prompt);
@@ -28,10 +22,9 @@ export async function askCommand(prompt: string, cwd = process.cwd()): Promise<v
   ];
   await runtime.hooks.onBeforeRequest(messages);
 
-  const client = new OpenRouterClient();
+  const provider = createAiProvider(config.provider);
   let printed = false;
-  const answer = await client.chat({
-    apiKey,
+  const answer = await provider.chat({
     model: config.model,
     temperature: config.temperature,
     messages,

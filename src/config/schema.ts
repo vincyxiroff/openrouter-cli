@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const configSchema = z.object({
+  provider: z.string().min(1).default("openrouter"),
   model: z.string().min(1).default("anthropic/claude-sonnet-4"),
   temperature: z.number().min(0).max(2).default(0.2),
   maxContextFiles: z.number().int().min(1).max(500).default(40),

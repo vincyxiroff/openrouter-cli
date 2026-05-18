@@ -29,5 +29,6 @@ This documentation explains how `openrouter-cli` is organized, how to use it, an
 ## Maintainer Guides
 
 - [Development Guide](development/README.md)
+- [Roadmap MVP Architecture](roadmap/README.md)
 - [Testing](development/testing.md)
 - [Release Checklist](development/release.md)

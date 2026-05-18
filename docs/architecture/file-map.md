@@ -48,3 +48,21 @@
 - `src/mcp/transport/httpTransport.ts`: HTTP transport.
 - `src/mcp/tools/mcpToolRegistry.ts`: discovered MCP tool registry.
 - `src/mcp/adapters/mcpToolAdapter.ts`: approval wrapper.
+
+## Providers
+
+- `src/providers/types.ts`: provider interface.
+- `src/providers/registry/providerRegistry.ts`: provider registry and factory.
+- `src/providers/openrouter/provider.ts`: OpenRouter adapter.
+- `src/providers/ollama/provider.ts`: Ollama adapter.
+- `src/providers/lmstudio/provider.ts`: LM Studio adapter.
+- `src/providers/llamacpp/provider.ts`: llama.cpp adapter.
+- `src/providers/local/provider.ts`: generic local OpenAI-compatible adapter.
+
+## Roadmap Modules
+
+- `src/voice`: voice mode configuration and session shell.
+- `src/agents`: multi-agent workflow configuration.
+- `src/dashboard`: local dashboard shell.
+- `src/team`: team collaboration planning config.
+- `vscode-extension`: VSCode extension MVP.

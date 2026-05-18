@@ -1,32 +1,25 @@
 import { confirm } from "@inquirer/prompts";
 import ora from "ora";
-import { OpenRouterClient } from "../ai/openrouter.js";
 import { editPrompt } from "../ai/prompts.js";
-import { loadConfig, readApiKey } from "../config/loadConfig.js";
+import { loadConfig } from "../config/loadConfig.js";
 import { buildContext } from "../context/fileScanner.js";
 import { applyChanges } from "../filesystem/applyChanges.js";
 import { renderPlanDiff } from "../filesystem/diff.js";
 import { parseEditPlan } from "../filesystem/editPlan.js";
 import { appendHistory } from "../memory/sessionMemory.js";
 import { createPluginRuntime } from "../plugins/core/pluginManager.js";
+import { createAiProvider } from "../providers/registry/providerRegistry.js";
 import { runShellCommand } from "../terminal/runCommand.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { extractJsonObject } from "../utils/json.js";
-import { UserFacingError } from "../utils/errors.js";
 
 export async function editCommand(task: string, cwd = process.cwd()): Promise<void> {
   const config = await loadConfig(cwd);
-  const apiKey = readApiKey();
-
-  if (!apiKey) {
-    throw new UserFacingError("Missing OPENROUTER_API_KEY");
-  }
 
   const spinner = ora("Analyzing project").start();
   const files = await buildContext(cwd, config, task);
   spinner.text = "Requesting edit plan";
-  const raw = await new OpenRouterClient().chat({
-    apiKey,
+  const raw = await createAiProvider(config.provider).chat({
     model: config.model,
     temperature: config.temperature,
     messages: [{ role: "user", content: editPrompt(task, files) }]

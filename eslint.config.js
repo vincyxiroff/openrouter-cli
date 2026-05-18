@@ -18,6 +18,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ["dist", "coverage", "node_modules"]
+    ignores: ["dist", "coverage", "node_modules", "vscode-extension/dist", "vscode-extension/src"]
   }
 );

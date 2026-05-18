@@ -1,0 +1,112 @@
+{
+  "name": "openrouter-cli-vscode",
+  "displayName": "OpenRouter CLI",
+  "description": "Use openrouter-cli inside VSCode.",
+  "version": "0.1.0",
+  "publisher": "openrouter-cli",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:openrouterCli.chat",
+    "onCommand:openrouterCli.explain",
+    "onCommand:openrouterCli.edit",
+    "onCommand:openrouterCli.fixErrors",
+    "onCommand:openrouterCli.refactor",
+    "onCommand:openrouterCli.addDocumentation",
+    "onView:openrouterCli.chatView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "openrouterCli.chat",
+        "title": "OpenRouter CLI: Chat"
+      },
+      {
+        "command": "openrouterCli.explain",
+        "title": "OpenRouter CLI: Explain"
+      },
+      {
+        "command": "openrouterCli.edit",
+        "title": "OpenRouter CLI: Edit"
+      },
+      {
+        "command": "openrouterCli.fixErrors",
+        "title": "OpenRouter CLI: Fix Errors"
+      },
+      {
+        "command": "openrouterCli.refactor",
+        "title": "OpenRouter CLI: Refactor"
+      },
+      {
+        "command": "openrouterCli.addDocumentation",
+        "title": "OpenRouter CLI: Add Documentation"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "openrouterCli.explain",
+          "when": "editorHasSelection",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.fixErrors",
+          "when": "editorHasSelection",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.refactor",
+          "when": "editorHasSelection",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.addDocumentation",
+          "when": "editorHasSelection",
+          "group": "openrouter"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "openrouterCli",
+          "title": "OpenRouter CLI",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "openrouterCli": [
+        {
+          "type": "webview",
+          "id": "openrouterCli.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "OpenRouter CLI",
+      "properties": {
+        "openrouterCli.command": {
+          "type": "string",
+          "default": "orc",
+          "description": "Command used to run openrouter-cli."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.92.0",
+    "typescript": "^5.8.2"
+  }
+}

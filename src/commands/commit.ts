@@ -1,15 +1,9 @@
-import { OpenRouterClient } from "../ai/openrouter.js";
-import { loadConfig, readApiKey } from "../config/loadConfig.js";
+import { loadConfig } from "../config/loadConfig.js";
 import { gitDiff, gitStatus } from "../git/git.js";
+import { createAiProvider } from "../providers/registry/providerRegistry.js";
 import { UserFacingError } from "../utils/errors.js";
 
 export async function commitCommand(cwd = process.cwd()): Promise<void> {
-  const apiKey = readApiKey();
-
-  if (!apiKey) {
-    throw new UserFacingError("Missing OPENROUTER_API_KEY");
-  }
-
   const config = await loadConfig(cwd);
   const status = await gitStatus(cwd);
   const diff = await gitDiff(cwd);
@@ -18,8 +12,7 @@ export async function commitCommand(cwd = process.cwd()): Promise<void> {
     throw new UserFacingError("No git changes found or git is unavailable");
   }
 
-  const answer = await new OpenRouterClient().chat({
-    apiKey,
+  const answer = await createAiProvider(config.provider).chat({
     model: config.model,
     temperature: 0.1,
     messages: [

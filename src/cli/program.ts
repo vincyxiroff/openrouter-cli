@@ -7,6 +7,8 @@ import { doctorCommand } from "../commands/doctor.js";
 import { editCommand } from "../commands/edit.js";
 import { explainCommand } from "../commands/explain.js";
 import { initCommand } from "../commands/init.js";
+import { agentsCommand, agentsInitCommand, workflowCommand } from "../commands/agents.js";
+import { dashboardCommand } from "../commands/dashboard.js";
 import {
   mcpAddCommand,
   mcpConnectCommand,
@@ -22,11 +24,17 @@ import {
   pluginEnableCommand,
   pluginInstallCommand,
   pluginRemoveCommand,
+  pluginSearchCommand,
+  pluginUpdateCommand,
   pluginsCommand
 } from "../commands/plugins.js";
+import { providerSetupCommand, providersCommand } from "../commands/providers.js";
 import { setupCommand, shouldRunFirstSetup } from "../commands/setup.js";
 import type { SetupOptions } from "../commands/setup.js";
+import { teamCommand, teamInitCommand } from "../commands/team.js";
 import { updateCommand } from "../commands/update.js";
+import { voiceCommand } from "../commands/voice.js";
+import type { VoiceOptions } from "../commands/voice.js";
 import { printError } from "../terminal/render.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { registerPluginCommands } from "../plugins/core/pluginManager.js";
@@ -123,6 +131,11 @@ export async function runCli(argv: string[]): Promise<void> {
     .description("List installed plugins")
     .action(async () => pluginsCommand());
   plugin
+    .command("search")
+    .argument("[query]", "search query", "")
+    .description("Search plugin registry")
+    .action(async (query: string) => pluginSearchCommand(query));
+  plugin
     .command("install")
     .argument("<name>")
     .description("Install a local plugin")
@@ -132,6 +145,11 @@ export async function runCli(argv: string[]): Promise<void> {
     .argument("<name>")
     .description("Remove a plugin")
     .action(async (name: string) => pluginRemoveCommand(name));
+  plugin
+    .command("update")
+    .argument("<name>")
+    .description("Check plugin registry updates")
+    .action(async (name: string) => pluginUpdateCommand(name));
   plugin
     .command("enable")
     .argument("<name>")
@@ -177,6 +195,55 @@ export async function runCli(argv: string[]): Promise<void> {
     .argument("<name>")
     .description("Remove an MCP server")
     .action(async (name: string) => mcpRemoveCommand(name));
+
+  program
+    .command("providers")
+    .description("List AI providers")
+    .action(async () => providersCommand());
+
+  program
+    .command("provider")
+    .description("Manage AI provider")
+    .command("setup")
+    .description("Configure AI provider")
+    .action(async () => providerSetupCommand());
+
+  program
+    .command("voice")
+    .description("Start voice mode")
+    .option("--model <model>", "speech-to-text model")
+    .action(async (options: VoiceOptions) => voiceCommand(options));
+
+  program
+    .command("agents")
+    .description("List agent workflow roles")
+    .action(async () => agentsCommand());
+
+  program
+    .command("workflow")
+    .argument("<task>")
+    .description("Run multi-agent workflow plan")
+    .action(async (task: string) => workflowCommand(task));
+
+  program
+    .command("agents:init")
+    .description("Create agents config")
+    .action(async () => agentsInitCommand());
+
+  program
+    .command("dashboard")
+    .description("Start local dashboard")
+    .action(async () => dashboardCommand());
+
+  program
+    .command("team")
+    .description("Show team collaboration status")
+    .action(async () => teamCommand());
+
+  program
+    .command("team:init")
+    .description("Create team config")
+    .action(async () => teamInitCommand());
 
   await registerPluginCommands(program);
 

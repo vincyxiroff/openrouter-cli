@@ -13,6 +13,8 @@ The AI coding CLI powered by OpenRouter.
 - Live OpenRouter model discovery with cache and offline fallback
 - Plugin architecture with local plugin loading and lifecycle hooks
 - MCP server configuration, connection checks, and dynamic tool discovery
+- Local provider architecture for Ollama, LM Studio, llama.cpp, and OpenAI-compatible APIs
+- VSCode extension MVP powered by the `orc` backend
 - Session memory in `.openrouter-cli/history.json`
 - Safety protections for commands, files, secrets, and credentials
 - Git-aware commit message generation
@@ -44,10 +46,16 @@ orc edit "add jwt authentication"
 orc explain
 orc context
 orc models --search claude
+orc providers
+orc provider setup
 orc plugins
 orc plugin install ./my-plugin
 orc mcp add filesystem npx @modelcontextprotocol/server-filesystem ./
 orc mcp connect filesystem
+orc voice
+orc agents
+orc workflow "build auth system"
+orc dashboard
 orc doctor
 orc commit
 ```
@@ -71,13 +79,17 @@ Start with the documentation hub:
 - [x] Approved AI file editing workflow
 - [x] Plugin system MVP
 - [x] MCP support MVP
-- [ ] Plugin marketplace
-- [ ] Local models
-- [ ] Voice mode
-- [ ] Multi-agent workflows
-- [ ] VSCode extension
-- [ ] Web dashboard
-- [ ] Team collaboration
+- [x] Local providers architecture MVP
+- [x] Plugin marketplace registry MVP
+- [x] Voice mode architecture MVP
+- [x] Multi-agent workflows architecture MVP
+- [x] VSCode extension MVP
+- [x] Web dashboard shell MVP
+- [x] Team collaboration architecture planning
+- [ ] Full plugin marketplace hosting
+- [ ] Full voice streaming implementation
+- [ ] Production web dashboard app
+- [ ] Team collaboration SaaS
 
 ## Contributing
 

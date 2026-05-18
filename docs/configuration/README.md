@@ -4,6 +4,7 @@ The main configuration file is `.openrouter-cli.json`.
 
 ```json
 {
+  "provider": "openrouter",
   "model": "anthropic/claude-sonnet-4",
   "temperature": 0.2,
   "maxContextFiles": 40,

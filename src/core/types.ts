@@ -6,6 +6,7 @@ export type ChatMessage = {
 };
 
 export type AppConfig = {
+  provider: string;
   model: string;
   temperature: number;
   maxContextFiles: number;
