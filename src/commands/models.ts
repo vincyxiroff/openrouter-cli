@@ -71,11 +71,11 @@ function renderModels(
   if (options.grouped) {
     renderProviderGroups(pageModels);
   } else {
-    renderSection("Free Models", pageModels.filter(isFreeModel), "✓");
+    renderSection("Free Models", pageModels.filter(isFreeModel), "+");
     renderSection(
       "Premium Models",
       pageModels.filter((model) => !isFreeModel(model)),
-      "★"
+      "*"
     );
   }
 
@@ -95,7 +95,7 @@ function renderProviderGroups(models: ModelInfo[]): void {
   for (const [provider, providerModels] of [...providers.entries()].sort(([a], [b]) =>
     a.localeCompare(b)
   )) {
-    renderSection(provider, providerModels, "•");
+    renderSection(provider, providerModels, "-");
   }
 }
 
@@ -105,7 +105,7 @@ function renderSection(title: string, models: ModelInfo[], icon: string): void {
   }
 
   console.log(theme.accent(title));
-  console.log(theme.muted("─".repeat(Math.max(20, title.length))));
+  console.log(theme.muted("-".repeat(Math.max(20, title.length))));
 
   for (const model of models) {
     console.log(`${icon} ${formatModel(model)}`);
@@ -116,13 +116,13 @@ function renderSection(title: string, models: ModelInfo[], icon: string): void {
 
 function formatModel(model: ModelInfo): string {
   const badges = [
-    isFreeModel(model) ? "free" : undefined,
+    isFreeModel(model) && !model.id.endsWith(":free") ? "free" : undefined,
     contextLengthOf(model) ? `${contextLengthOf(model).toLocaleString()} ctx` : undefined,
     isMultimodalModel(model) ? "multimodal" : undefined,
     isReasoningModel(model) ? "reasoning" : undefined
   ].filter(Boolean);
 
-  return `${theme.title(model.id)} ${theme.muted(badges.join(" · "))}`;
+  return `${theme.title(model.id)} ${theme.muted(badges.join(" | "))}`;
 }
 
 function parseNumberOption(value: string | undefined): number | undefined {

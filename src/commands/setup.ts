@@ -213,7 +213,8 @@ async function ensureHistory(cwd: string): Promise<void> {
 
 function formatModelChoice(model: ModelInfo): string {
   const badges = [
-    isFreeModel(model) ? "free" : "premium",
+    isFreeModel(model) && !model.id.endsWith(":free") ? "free" : undefined,
+    !isFreeModel(model) ? "premium" : undefined,
     contextLengthOf(model) ? `${contextLengthOf(model).toLocaleString()} ctx` : undefined
   ].filter(Boolean);
 
