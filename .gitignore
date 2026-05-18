@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.env
+.openrouter-cli/history.json
+.openrouter-cli/models-cache.json
+.openrouter-cli/cache
+*.log
+.DS_Store
