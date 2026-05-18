@@ -28,6 +28,12 @@ const cacheSchema = z.object({
 });
 
 export class ModelRegistry {
+  async refreshModels(cwd: string, apiKey: string): Promise<ModelRegistryResult> {
+    const models = await this.fetchModels(apiKey);
+    await this.writeCache(cwd, models);
+    return { models, source: "live" };
+  }
+
   async getModels(cwd: string, apiKey?: string): Promise<ModelRegistryResult> {
     const cached = await this.readCache(cwd);
 

@@ -49,13 +49,19 @@ orc models --context 100000
 orc models --json
 orc doctor
 orc init
+orc setup
+orc setup --reset
+orc setup --model
+orc setup --key
 orc commit
 orc update
 ```
 
 ## Configuration
 
-Create `.openrouter-cli.json`:
+Run `orc` or `orc setup` to start the guided first-run setup. The setup stores your OpenRouter API key in `.env`, keeps it out of `.openrouter-cli.json`, verifies the key, downloads the live model catalog, and helps choose a default model.
+
+Create `.openrouter-cli.json` manually only if you prefer:
 
 ```json
 {

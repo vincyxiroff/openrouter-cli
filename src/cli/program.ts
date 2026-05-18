@@ -9,6 +9,8 @@ import { explainCommand } from "../commands/explain.js";
 import { initCommand } from "../commands/init.js";
 import { modelsCommand } from "../commands/models.js";
 import type { ModelsCommandOptions } from "../commands/models.js";
+import { setupCommand, shouldRunFirstSetup } from "../commands/setup.js";
+import type { SetupOptions } from "../commands/setup.js";
 import { updateCommand } from "../commands/update.js";
 import { printError } from "../terminal/render.js";
 import { getErrorMessage } from "../utils/errors.js";
@@ -20,7 +22,13 @@ export async function runCli(argv: string[]): Promise<void> {
     .name("orc")
     .description("The AI coding CLI powered by OpenRouter.")
     .version("0.1.0")
-    .action(async () => chatCommand());
+    .action(async () => {
+      if (await shouldRunFirstSetup()) {
+        await setupCommand();
+      }
+
+      await chatCommand();
+    });
 
   program
     .command("ask")
@@ -68,6 +76,14 @@ export async function runCli(argv: string[]): Promise<void> {
     .command("init")
     .description("Create initial configuration")
     .action(async () => initCommand());
+
+  program
+    .command("setup")
+    .description("Run first-run setup")
+    .option("--reset", "delete configuration and run setup again")
+    .option("--model", "change only the default model")
+    .option("--key", "change only the OpenRouter API key")
+    .action(async (options: SetupOptions) => setupCommand(options));
 
   program
     .command("commit")
