@@ -1,10 +1,28 @@
 name: publish
 
 on:
+  push:
+    tags:
+      - "v*"
   release:
     types:
       - published
   workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: npm dist tag
+        required: true
+        default: latest
+        type: choice
+        options:
+          - latest
+          - beta
+          - next
+      dry_run:
+        description: Run checks and package without publishing
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -14,6 +32,9 @@ jobs:
   npm:
     runs-on: ubuntu-latest
     environment: npm
+    env:
+      NPM_TAG: ${{ github.event.inputs.npm_tag || 'latest' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,4 +46,10 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - run: npm publish --access public
+      - run: npm pack --dry-run
+      - name: Publish to npm
+        if: env.DRY_RUN != 'true'
+        run: npm publish --access public --tag "$NPM_TAG" --provenance
+      - name: Dry run complete
+        if: env.DRY_RUN == 'true'
+        run: npm publish --access public --tag "$NPM_TAG" --dry-run
