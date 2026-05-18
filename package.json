@@ -1,10 +1,10 @@
 {
-  "name": "openrouter-cli",
-  "version": "0.1.0",
+  "name": "openrouter-cli-v2",
+  "version": "1.2.1",
   "description": "The AI coding CLI powered by OpenRouter.",
   "type": "module",
   "bin": {
-    "orc": "./dist/index.js"
+    "orc": "dist/index.js"
   },
   "files": [
     "dist",

@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-npm install -g openrouter-cli
+npm install -g openrouter-cli-v2
 ```
 
 ## First Run

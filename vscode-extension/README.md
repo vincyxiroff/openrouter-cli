@@ -19,7 +19,7 @@ The extension uses `orc` as its backend instead of duplicating agent logic.
 Install the CLI first:
 
 ```bash
-npm install -g openrouter-cli
+npm install -g openrouter-cli-v2
 orc setup
 ```
 
