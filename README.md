@@ -1,5 +1,5 @@
 # openrouter-cli
-
+# STILL W.I.P
 The AI coding CLI powered by OpenRouter.
 
 `openrouter-cli` is a professional terminal coding agent for real codebases. It can chat about a project, build smart local context, stream OpenRouter responses, propose structured file edits, show diffs before writing, and run commands only after confirmation.
@@ -91,6 +91,10 @@ Start with the documentation hub:
 - [ ] Production web dashboard app
 - [ ] Team collaboration SaaS
 
+
+# TODO
+- [ ] fix after tool call ai stops.
+- [ ] add an auto accept edits and cmds
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
