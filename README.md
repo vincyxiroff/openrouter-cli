@@ -2,21 +2,20 @@
 
 The AI coding CLI powered by OpenRouter.
 
-`openrouter-cli` is a professional terminal coding agent for real codebases. It can chat about your project, build smart context, request structured AI edit plans, show diffs before writing files, and run commands only after confirmation.
+`openrouter-cli` is a professional terminal coding agent for real codebases. It can chat about a project, build smart local context, stream OpenRouter responses, propose structured file edits, show diffs before writing, and run commands only after confirmation.
 
-## Features
+## Highlights
 
 - Interactive terminal chat with `orc`
-- Single-shot project questions with `orc ask`
-- AI coding mode with approved diffs via `orc edit`
-- OpenRouter model support with streaming responses
+- First-run setup UI with API key verification and live model selection
+- Single-shot questions with `orc ask`
+- Approved AI editing workflow with professional diffs
 - Live OpenRouter model discovery with cache and offline fallback
-- Smart context selection from local repositories
+- Plugin architecture with local plugin loading and lifecycle hooks
+- MCP server configuration, connection checks, and dynamic tool discovery
 - Session memory in `.openrouter-cli/history.json`
-- Safe file editing with sensitive path protection
-- Command execution confirmation and dangerous command blocking
+- Safety protections for commands, files, secrets, and credentials
 - Git-aware commit message generation
-- Premium terminal output with colors, spinners, markdown, and syntax highlighting
 
 ## Install
 
@@ -27,103 +26,47 @@ npm install -g openrouter-cli
 ## Quickstart
 
 ```bash
-export OPENROUTER_API_KEY="your-key"
-orc init
+orc
 orc ask "explain this project"
-orc edit "add input validation"
+orc edit "fix TypeScript errors"
+orc models --free
 ```
+
+On first run, `orc` starts a guided setup that stores `OPENROUTER_API_KEY` in `.env`, verifies the key, downloads live models, and creates `.openrouter-cli.json`.
 
 ## Commands
 
 ```bash
 orc
+orc setup
 orc ask "explain this project"
 orc edit "add jwt authentication"
 orc explain
 orc context
-orc models
-orc models --free
 orc models --search claude
-orc models --provider anthropic
-orc models --context 100000
-orc models --json
+orc plugins
+orc plugin install ./my-plugin
+orc mcp add filesystem npx @modelcontextprotocol/server-filesystem ./
+orc mcp connect filesystem
 orc doctor
-orc init
-orc setup
-orc setup --reset
-orc setup --model
-orc setup --key
 orc commit
-orc update
 ```
 
-## Configuration
+## Documentation
 
-Run `orc` or `orc setup` to start the guided first-run setup. The setup stores your OpenRouter API key in `.env`, keeps it out of `.openrouter-cli.json`, verifies the key, downloads the live model catalog, and helps choose a default model.
+Start with the documentation hub:
 
-Create `.openrouter-cli.json` manually only if you prefer:
-
-```json
-{
-  "model": "anthropic/claude-sonnet-4",
-  "temperature": 0.2,
-  "maxContextFiles": 40,
-  "maxFileSizeKB": 100,
-  "allowCommandExecution": false,
-  "ignoredPaths": [
-    "node_modules",
-    ".git",
-    "dist",
-    "build",
-    ".next",
-    "coverage",
-    ".turbo",
-    ".cache",
-    ".env",
-    "*.lock"
-  ]
-}
-```
-
-## Editing Workflow
-
-`orc edit` follows a strict approval flow:
-
-1. Analyze the task
-2. Select relevant context files
-3. Ask OpenRouter for a structured JSON edit plan
-4. Show the summary and diff
-5. Ask before applying changes
-6. Ask before running any suggested command
-7. Save the session memory
-
-## Screenshots
-
-Terminal screenshots are tracked in the roadmap for the first public release.
-
-## FAQ
-
-**Does it modify files automatically?**
-No. File changes are applied only after you approve the diff.
-
-**Can it run shell commands?**
-Only after confirmation, and high-risk commands are blocked.
-
-**Can it use any OpenRouter model?**
-Yes. Set the model in `.openrouter-cli.json`.
-
-**Where is memory stored?**
-`.openrouter-cli/history.json`.
-
-## Model Discovery
-
-`orc models` retrieves the live OpenRouter model catalog from `https://openrouter.ai/api/v1/models`, stores a six-hour cache in `.openrouter-cli/models-cache.json`, and falls back to cached data when offline.
-
-It supports search, provider filters, free model detection, minimum context length filters, multimodal filters, reasoning filters, JSON output, and pagination.
+- [Documentation Index](docs/README.md)
+- [Getting Started](docs/getting-started/README.md)
+- [Configuration](docs/configuration/README.md)
+- [Architecture](docs/architecture/README.md)
+- [Plugin Development](docs/plugins/README.md)
+- [MCP Support](docs/mcp/README.md)
+- [Development Guide](docs/development/README.md)
 
 ## Roadmap
 
-- Plugins
+- Plugin ecosystem
 - MCP support
 - Local models
 - Voice mode

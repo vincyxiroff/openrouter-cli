@@ -1,4 +1,5 @@
 import { execa } from "execa";
+import { createPluginRuntime } from "../plugins/core/pluginManager.js";
 import { validateCommand } from "../safety/commands.js";
 import { UserFacingError } from "../utils/errors.js";
 
@@ -9,6 +10,7 @@ export async function runShellCommand(command: string, cwd: string): Promise<num
     throw new UserFacingError(validation.reason);
   }
 
+  await (await createPluginRuntime(cwd)).hooks.onCommandExecution(command);
   const subprocess = execa(command, {
     cwd,
     shell: true,

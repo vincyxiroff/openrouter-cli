@@ -7,13 +7,29 @@ import { doctorCommand } from "../commands/doctor.js";
 import { editCommand } from "../commands/edit.js";
 import { explainCommand } from "../commands/explain.js";
 import { initCommand } from "../commands/init.js";
+import {
+  mcpAddCommand,
+  mcpConnectCommand,
+  mcpDisconnectCommand,
+  mcpListCommand,
+  mcpRemoveCommand,
+  mcpStatusCommand
+} from "../commands/mcp.js";
 import { modelsCommand } from "../commands/models.js";
 import type { ModelsCommandOptions } from "../commands/models.js";
+import {
+  pluginDisableCommand,
+  pluginEnableCommand,
+  pluginInstallCommand,
+  pluginRemoveCommand,
+  pluginsCommand
+} from "../commands/plugins.js";
 import { setupCommand, shouldRunFirstSetup } from "../commands/setup.js";
 import type { SetupOptions } from "../commands/setup.js";
 import { updateCommand } from "../commands/update.js";
 import { printError } from "../terminal/render.js";
 import { getErrorMessage } from "../utils/errors.js";
+import { registerPluginCommands } from "../plugins/core/pluginManager.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -94,6 +110,75 @@ export async function runCli(argv: string[]): Promise<void> {
     .command("update")
     .description("Check latest npm version")
     .action(async () => updateCommand());
+
+  program
+    .command("plugins")
+    .description("List installed plugins")
+    .action(async () => pluginsCommand());
+
+  const plugin = program.command("plugin").description("Manage plugins");
+
+  plugin
+    .command("list")
+    .description("List installed plugins")
+    .action(async () => pluginsCommand());
+  plugin
+    .command("install")
+    .argument("<name>")
+    .description("Install a local plugin")
+    .action(async (name: string) => pluginInstallCommand(name));
+  plugin
+    .command("remove")
+    .argument("<name>")
+    .description("Remove a plugin")
+    .action(async (name: string) => pluginRemoveCommand(name));
+  plugin
+    .command("enable")
+    .argument("<name>")
+    .description("Enable a plugin")
+    .action(async (name: string) => pluginEnableCommand(name));
+  plugin
+    .command("disable")
+    .argument("<name>")
+    .description("Disable a plugin")
+    .action(async (name: string) => pluginDisableCommand(name));
+
+  const mcp = program.command("mcp").description("Manage MCP servers");
+
+  mcp
+    .command("list")
+    .description("List MCP servers")
+    .action(async () => mcpListCommand());
+  mcp
+    .command("status")
+    .description("Show MCP status")
+    .action(async () => mcpStatusCommand());
+  mcp
+    .command("connect")
+    .argument("[name]")
+    .description("Connect and discover MCP tools")
+    .action(async (name?: string) => mcpConnectCommand(name));
+  mcp
+    .command("disconnect")
+    .argument("[name]")
+    .description("Disconnect MCP servers")
+    .action((name?: string) => mcpDisconnectCommand(name));
+  mcp
+    .command("add")
+    .argument("<name>")
+    .argument("<commandOrUrl>")
+    .argument("[args...]")
+    .description("Add an MCP server")
+    .action(async (name: string, commandOrUrl: string, args: string[]) =>
+      mcpAddCommand(name, commandOrUrl, args)
+    );
+  mcp
+    .command("remove")
+    .argument("<name>")
+    .description("Remove an MCP server")
+    .action(async (name: string) => mcpRemoveCommand(name));
+
+  await registerPluginCommands(program);
 
   try {
     await program.parseAsync(argv);

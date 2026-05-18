@@ -8,6 +8,7 @@ import { applyChanges } from "../filesystem/applyChanges.js";
 import { renderPlanDiff } from "../filesystem/diff.js";
 import { parseEditPlan } from "../filesystem/editPlan.js";
 import { appendHistory } from "../memory/sessionMemory.js";
+import { createPluginRuntime } from "../plugins/core/pluginManager.js";
 import { runShellCommand } from "../terminal/runCommand.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { extractJsonObject } from "../utils/json.js";
@@ -46,6 +47,7 @@ export async function editCommand(task: string, cwd = process.cwd()): Promise<vo
 
   await applyChanges(cwd, plan);
   printInfo("Changes applied.");
+  await (await createPluginRuntime(cwd)).hooks.onFileEdit(plan.changes);
 
   for (const command of plan.commands) {
     const run = config.allowCommandExecution

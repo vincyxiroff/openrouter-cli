@@ -4,6 +4,7 @@ import { contextPrompt, systemPrompt } from "../ai/prompts.js";
 import { loadConfig, readApiKey } from "../config/loadConfig.js";
 import { buildContext } from "../context/fileScanner.js";
 import { appendHistory, readHistory } from "../memory/sessionMemory.js";
+import { createPluginRuntime } from "../plugins/core/pluginManager.js";
 import { renderMarkdown } from "../terminal/render.js";
 import { UserFacingError } from "../utils/errors.js";
 
@@ -18,7 +19,14 @@ export async function askCommand(prompt: string, cwd = process.cwd()): Promise<v
   const spinner = ora("Building context").start();
   const files = await buildContext(cwd, config, prompt);
   const history = await readHistory(cwd);
+  const runtime = await createPluginRuntime(cwd);
   spinner.text = "Streaming response";
+  const messages = [
+    { role: "system" as const, content: systemPrompt() },
+    ...history,
+    { role: "user" as const, content: `Context:\n${contextPrompt(files)}\n\nQuestion:\n${prompt}` }
+  ];
+  await runtime.hooks.onBeforeRequest(messages);
 
   const client = new OpenRouterClient();
   let printed = false;
@@ -26,11 +34,7 @@ export async function askCommand(prompt: string, cwd = process.cwd()): Promise<v
     apiKey,
     model: config.model,
     temperature: config.temperature,
-    messages: [
-      { role: "system", content: systemPrompt() },
-      ...history,
-      { role: "user", content: `Context:\n${contextPrompt(files)}\n\nQuestion:\n${prompt}` }
-    ],
+    messages,
     onToken(token) {
       if (!printed) {
         spinner.stop();
@@ -52,4 +56,5 @@ export async function askCommand(prompt: string, cwd = process.cwd()): Promise<v
     { role: "user", content: prompt },
     { role: "assistant", content: answer }
   ]);
+  await runtime.hooks.onAfterRequest(answer);
 }
