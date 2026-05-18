@@ -3,6 +3,14 @@
   "version": "1.2.3",
   "description": "The AI coding CLI powered by OpenRouter.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vincyxiroff/openrouter-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vincyxiroff/openrouter-cli/issues"
+  },
+  "homepage": "https://github.com/vincyxiroff/openrouter-cli#readme",
   "bin": {
     "orc": "dist/index.js"
   },
