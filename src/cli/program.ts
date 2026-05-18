@@ -35,7 +35,10 @@ import { teamCommand, teamInitCommand } from "../commands/team.js";
 import { updateCommand } from "../commands/update.js";
 import { voiceCommand } from "../commands/voice.js";
 import type { VoiceOptions } from "../commands/voice.js";
+import { migrateConfig } from "../config/migrateConfig.js";
+import { packageVersion } from "../config/packageInfo.js";
 import { printError } from "../terminal/render.js";
+import { maybeAutoUpdate } from "../update/autoUpdate.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { registerPluginCommands } from "../plugins/core/pluginManager.js";
 
@@ -45,12 +48,15 @@ export async function runCli(argv: string[]): Promise<void> {
   program
     .name("orc")
     .description("The AI coding CLI powered by OpenRouter.")
-    .version("0.1.0")
+    .version(packageVersion())
     .action(async () => {
       if (await shouldRunFirstSetup()) {
         await setupCommand();
+      } else {
+        await migrateConfig();
       }
 
+      await maybeAutoUpdate();
       await chatCommand();
     });
 

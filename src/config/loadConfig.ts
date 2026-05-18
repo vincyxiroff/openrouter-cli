@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import dotenv from "dotenv";
-import { defaultConfig } from "./defaults.js";
-import { configSchema } from "./schema.js";
+import { normalizeConfig } from "./migrateConfig.js";
 import type { AppConfig } from "../core/types.js";
 
 export async function loadConfig(cwd = process.cwd()): Promise<AppConfig> {
@@ -11,10 +10,10 @@ export async function loadConfig(cwd = process.cwd()): Promise<AppConfig> {
 
   try {
     const raw = await readFile(path, "utf8");
-    return configSchema.parse({ ...defaultConfig, ...JSON.parse(raw) });
+    return normalizeConfig(JSON.parse(raw) as Partial<AppConfig>);
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return defaultConfig;
+      return normalizeConfig({});
     }
 
     throw error;
