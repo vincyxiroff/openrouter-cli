@@ -4,6 +4,11 @@
   "description": "Use openrouter-cli inside VSCode.",
   "version": "0.1.0",
   "publisher": "openrouter-cli",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vincyxiroff/openrouter-cli"
+  },
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -102,11 +107,13 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "package:vsix": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "@types/vscode": "^1.92.0",
+    "@vscode/vsce": "^3.9.1",
     "typescript": "^5.8.2"
   }
 }
