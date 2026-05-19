@@ -36,19 +36,42 @@ export async function createPluginRuntime(cwd = process.cwd()): Promise<PluginRu
 }
 
 export async function registerPluginCommands(program: Command, cwd = process.cwd()): Promise<void> {
-  const runtime = await createPluginRuntime(cwd);
+  const runtime = await withTimeout(createPluginRuntime(cwd), 2_500);
+
+  if (!runtime) {
+    return;
+  }
 
   for (const plugin of runtime.plugins) {
     try {
-      await plugin.module?.commands?.(program, {
-        cwd,
-        manifest: plugin.manifest,
-        services: runtime.services,
-        tools: runtime.tools,
-        providers: runtime.providers
-      });
+      await withTimeout(
+        plugin.module?.commands?.(program, {
+          cwd,
+          manifest: plugin.manifest,
+          services: runtime.services,
+          tools: runtime.tools,
+          providers: runtime.providers
+        }),
+        2_500
+      );
     } catch {
       continue;
     }
   }
+}
+
+async function withTimeout<TValue>(
+  promise: Promise<TValue> | TValue | undefined,
+  ms: number
+): Promise<TValue | undefined> {
+  if (!promise) {
+    return undefined;
+  }
+
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<undefined>((resolve) => {
+      setTimeout(() => resolve(undefined), ms);
+    })
+  ]);
 }

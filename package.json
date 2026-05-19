@@ -1,6 +1,6 @@
 {
   "name": "openrouter-cli-v2",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "The AI coding CLI powered by OpenRouter.",
   "type": "module",
   "repository": {

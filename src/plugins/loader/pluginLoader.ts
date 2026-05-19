@@ -112,9 +112,15 @@ export class PluginLoader {
   private async load(plugin: LoadedPlugin): Promise<LoadedPlugin> {
     try {
       const entry = join(plugin.path, plugin.manifest.entry);
-      const module = (await import(pathToFileURL(entry).href)) as
+      const module = (await withTimeout(import(pathToFileURL(entry).href), 5_000)) as
         | PluginModule
-        | { default?: PluginModule };
+        | { default?: PluginModule }
+        | undefined;
+
+      if (!module) {
+        throw new Error("Plugin import timed out");
+      }
+
       const pluginModule =
         "default" in module && module.default ? module.default : (module as PluginModule);
       const context = this.context(plugin);

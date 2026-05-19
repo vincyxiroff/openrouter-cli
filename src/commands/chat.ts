@@ -1,6 +1,7 @@
 import { readSlashInput } from "./slash/autocomplete/slashInput.js";
 import { runFallbackAsk } from "./slash/commands/builtin.js";
 import { createSlashRegistry } from "./slash/registry/createSlashRegistry.js";
+import ora from "ora";
 import { loadConfig } from "../config/loadConfig.js";
 import { loadFileMentionEntries } from "../mentions/scanner/fileMentionCache.js";
 import {
@@ -15,6 +16,8 @@ import { renderTrustState } from "../trust/ui/trustUi.js";
 import { getErrorMessage } from "../utils/errors.js";
 
 export async function chatCommand(cwd = process.cwd()): Promise<void> {
+  console.log(header());
+  const spinner = ora("Starting interactive session").start();
   const runtime = await createPluginRuntime(cwd);
   const slashRegistry = await createSlashRegistry(cwd, runtime);
   const config = await loadConfig(cwd);
@@ -23,7 +26,7 @@ export async function chatCommand(cwd = process.cwd()): Promise<void> {
   const trustManager = new TrustManager();
   let trustState = await trustManager.state(cwd);
   let exitRequested = false;
-  console.log(header());
+  spinner.stop();
   renderTrustState(trustState);
   await runtime.hooks.onChatStart();
 
