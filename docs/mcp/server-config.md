@@ -6,6 +6,8 @@ MCP servers are configured in:
 .openrouter-cli/mcp.json
 ```
 
+MCP management and execution require a trusted project or trusted folder.
+
 ## Stdio Server
 
 ```json

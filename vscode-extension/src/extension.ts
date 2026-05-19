@@ -12,7 +12,9 @@ export function activate(context: vscode.ExtensionContext): void {
     command("openrouterCli.refactor", () => runSelectionTask("Refactor this code")),
     command("openrouterCli.addDocumentation", () =>
       runSelectionTask("Add documentation to this code")
-    )
+    ),
+    command("openrouterCli.trustStatus", () => runTrustStatus()),
+    command("openrouterCli.openTerminal", () => openOrcTerminal())
   );
 }
 
@@ -61,6 +63,24 @@ async function runSelectionTask(instruction: string): Promise<void> {
   const channel = vscode.window.createOutputChannel("OpenRouter CLI");
   channel.show(true);
   await streamOrc(["ask", prompt], (chunk) => channel.append(chunk));
+}
+
+async function runTrustStatus(): Promise<void> {
+  const channel = vscode.window.createOutputChannel("OpenRouter CLI");
+  channel.show(true);
+  await streamOrc(["trust", "status"], (chunk) => channel.append(chunk));
+}
+
+function openOrcTerminal(): void {
+  const commandName =
+    vscode.workspace.getConfiguration("openrouterCli").get<string>("command") ?? "orc";
+  const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const terminal = vscode.window.createTerminal({
+    name: "OpenRouter CLI",
+    cwd
+  });
+  terminal.show();
+  terminal.sendText(commandName);
 }
 
 function streamOrc(args: string[], onChunk: (chunk: string) => void): Promise<void> {

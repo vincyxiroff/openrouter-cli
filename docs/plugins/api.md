@@ -1,10 +1,13 @@
 # Plugin API
 
-Plugin modules can export commands, hooks, tools, and providers.
+Plugin modules can export commands, slash commands, hooks, tools, and providers.
 
 ```js
 export default {
   commands(program, context) {},
+  slashCommands(context) {
+    return [];
+  },
   hooks: {},
   tools(registry, context) {},
   providers(registry, context) {}
@@ -66,3 +69,25 @@ export default {
   }
 };
 ```
+
+## Register a Slash Command
+
+```js
+export default {
+  slashCommands() {
+    return [
+      {
+        name: "/example",
+        description: "Run example",
+        category: "Development",
+        aliases: ["/ex"],
+        async execute(context) {
+          console.log(context.cwd);
+        }
+      }
+    ];
+  }
+};
+```
+
+Plugins and plugin slash commands are disabled in restricted workspaces.

@@ -2,10 +2,13 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { EditPlan } from "../core/types.js";
 import { validateFilePath } from "../safety/files.js";
+import { TrustGuard } from "../trust/guards/trustGuard.js";
 import { isInside } from "../utils/path.js";
 import { UserFacingError } from "../utils/errors.js";
 
 export async function applyChanges(cwd: string, plan: EditPlan): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "editing");
+
   for (const change of plan.changes) {
     const validation = validateFilePath(change.path);
 

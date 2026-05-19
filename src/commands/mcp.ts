@@ -4,6 +4,7 @@ import { McpToolRegistry } from "../mcp/tools/mcpToolRegistry.js";
 import type { McpServerConfig } from "../mcp/types/mcp.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { theme } from "../terminal/theme.js";
+import { TrustGuard } from "../trust/guards/trustGuard.js";
 
 export async function mcpListCommand(cwd = process.cwd()): Promise<void> {
   const config = await readMcpConfig(cwd);
@@ -27,6 +28,7 @@ export async function mcpStatusCommand(cwd = process.cwd()): Promise<void> {
 }
 
 export async function mcpConnectCommand(name?: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "MCP");
   const config = await readMcpConfig(cwd);
   const servers = config.servers.filter(
     (server) => server.enabled && (!name || server.name === name)
@@ -79,6 +81,7 @@ export async function mcpAddCommand(
   args: string[],
   cwd = process.cwd()
 ): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "MCP");
   const server: McpServerConfig = commandOrUrl.startsWith("http")
     ? { name, url: commandOrUrl, enabled: true }
     : { name, command: commandOrUrl, args, enabled: true };
@@ -87,6 +90,7 @@ export async function mcpAddCommand(
 }
 
 export async function mcpRemoveCommand(name: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "MCP");
   await removeMcpServer(cwd, name);
   printInfo(`Removed MCP server: ${name}`);
 }

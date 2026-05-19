@@ -29,6 +29,8 @@ npm run dev -- models --free
 - TypeScript strict mode
 - No hardcoded secrets
 - No automatic shell execution
+- Auto shell execution only in trusted workspaces
 - No direct AI file writes
+- Use `src/storage` helpers for global and project-local paths
 - Keep modules small and explicit
 - Add tests for behavior changes

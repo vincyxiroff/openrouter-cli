@@ -3,6 +3,7 @@ import type { ChatMessage, FileChange } from "../../core/types.js";
 import type { ProviderRegistry } from "../../core/providerRegistry.js";
 import type { ServiceContainer } from "../../core/serviceContainer.js";
 import type { ToolRegistry } from "../../core/toolRegistry.js";
+import type { SlashCommand } from "../../commands/slash/registry/types.js";
 
 export type PluginManifest = {
   name: string;
@@ -32,6 +33,7 @@ export type PluginContext = {
 
 export type PluginModule = {
   commands?: (program: Command, context: PluginContext) => void | Promise<void>;
+  slashCommands?: (context: PluginContext) => SlashCommand[] | Promise<SlashCommand[]>;
   hooks?: PluginHooks;
   tools?: (registry: ToolRegistry, context: PluginContext) => void | Promise<void>;
   providers?: (registry: ProviderRegistry, context: PluginContext) => void | Promise<void>;

@@ -1,9 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { z } from "zod";
+import { getProjectDataPaths } from "../../storage/paths/projectDataPaths.js";
 import type { McpConfig, McpServerConfig } from "../types/mcp.js";
-
-const mcpConfigPath = ".openrouter-cli/mcp.json";
 
 const serverSchema = z
   .object({
@@ -23,7 +22,7 @@ const configSchema = z.object({
 
 export async function readMcpConfig(cwd: string): Promise<McpConfig> {
   try {
-    const raw = await readFile(join(cwd, mcpConfigPath), "utf8");
+    const raw = await readFile(getProjectDataPaths(cwd).mcp, "utf8");
     return configSchema.parse(JSON.parse(raw));
   } catch {
     return { servers: [] };
@@ -31,7 +30,7 @@ export async function readMcpConfig(cwd: string): Promise<McpConfig> {
 }
 
 export async function writeMcpConfig(cwd: string, config: McpConfig): Promise<void> {
-  const path = join(cwd, mcpConfigPath);
+  const path = getProjectDataPaths(cwd).mcp;
   await mkdir(dirname(path), { recursive: true });
   await writeFile(
     path,

@@ -5,6 +5,7 @@ import { ToolRegistry } from "../../core/toolRegistry.js";
 import { PluginHookRunner } from "../hooks/pluginHooks.js";
 import { PluginLoader } from "../loader/pluginLoader.js";
 import type { LoadedPlugin } from "../types/plugin.js";
+import { TrustGuard } from "../../trust/guards/trustGuard.js";
 
 export type PluginRuntime = {
   plugins: LoadedPlugin[];
@@ -18,9 +19,19 @@ export async function createPluginRuntime(cwd = process.cwd()): Promise<PluginRu
   const services = new ServiceContainer();
   const tools = new ToolRegistry();
   const providers = new ProviderRegistry();
+  const trust = await new TrustGuard().state(cwd);
+
+  if (trust.level === "restricted") {
+    const plugins: LoadedPlugin[] = [];
+    const hooks = new PluginHookRunner(cwd, services, tools, providers, plugins);
+    services.set("trustState", trust);
+    return { plugins, hooks, tools, providers, services };
+  }
+
   const loader = new PluginLoader({ cwd, services, tools, providers });
   const plugins = await loader.loadEnabled();
   const hooks = new PluginHookRunner(cwd, services, tools, providers, plugins);
+  services.set("trustState", trust);
   return { plugins, hooks, tools, providers, services };
 }
 

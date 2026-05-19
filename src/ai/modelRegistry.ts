@@ -1,7 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { z } from "zod";
 import type { ModelInfo, ModelRegistryResult } from "../core/types.js";
+import { getAppDataPaths } from "../storage/paths/appDataPaths.js";
 import { UserFacingError } from "../utils/errors.js";
 
 export type ModelFilters = {
@@ -19,7 +20,6 @@ export type ModelRecommendation = {
 };
 
 const modelsUrl = "https://openrouter.ai/api/v1/models";
-const cachePath = ".openrouter-cli/models-cache.json";
 const cacheTtlMs = 6 * 60 * 60 * 1000;
 
 const cacheSchema = z.object({
@@ -201,15 +201,19 @@ export class ModelRegistry {
   private async readCache(
     cwd: string
   ): Promise<{ fetchedAt: string; models: ModelInfo[] } | undefined> {
+    void cwd;
+    const paths = await getAppDataPaths();
+
     try {
-      return cacheSchema.parse(JSON.parse(await readFile(join(cwd, cachePath), "utf8")));
+      return cacheSchema.parse(JSON.parse(await readFile(paths.modelsCache, "utf8")));
     } catch {
       return undefined;
     }
   }
 
   private async writeCache(cwd: string, models: ModelInfo[]): Promise<void> {
-    const path = join(cwd, cachePath);
+    void cwd;
+    const path = (await getAppDataPaths()).modelsCache;
     await mkdir(dirname(path), { recursive: true });
     await writeFile(
       path,

@@ -7,6 +7,9 @@ export const defaultConfig: AppConfig = {
   maxContextFiles: 40,
   maxFileSizeKB: 100,
   allowCommandExecution: false,
+  autoAcceptEdits: false,
+  autoAcceptCommands: false,
+  maxToolIterations: 20,
   ignoredPaths: [
     "node_modules",
     ".git",

@@ -40,3 +40,5 @@ export default {
 : Runs when the chat session exits.
 
 Hook failures are isolated and time-limited.
+
+Hooks are not loaded in restricted workspaces because plugins are disabled until the project or folder is trusted.

@@ -12,6 +12,9 @@ export type AppConfig = {
   maxContextFiles: number;
   maxFileSizeKB: number;
   allowCommandExecution: boolean;
+  autoAcceptEdits: boolean;
+  autoAcceptCommands: boolean;
+  maxToolIterations: number;
   ignoredPaths: string[];
 };
 

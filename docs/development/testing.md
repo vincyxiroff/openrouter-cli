@@ -15,6 +15,10 @@ Current coverage focuses on:
 - `.env` updates
 - plugin manifest and local install flow
 - MCP config and tool registry
+- slash command matching
+- file mention parsing and context resolution
+- trust resolution
+- OS app-data and project-data paths
 
 Before publishing or opening a PR, run:
 

@@ -7,6 +7,9 @@ export const configSchema = z.object({
   maxContextFiles: z.number().int().min(1).max(500).default(40),
   maxFileSizeKB: z.number().int().min(1).max(10_000).default(100),
   allowCommandExecution: z.boolean().default(false),
+  autoAcceptEdits: z.boolean().default(false),
+  autoAcceptCommands: z.boolean().default(false),
+  maxToolIterations: z.number().int().min(1).max(100).default(20),
   ignoredPaths: z
     .array(z.string())
     .default([

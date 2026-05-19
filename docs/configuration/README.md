@@ -1,6 +1,8 @@
 # Configuration
 
-The main configuration file is `.openrouter-cli.json`.
+Project configuration lives in `.openrouter-cli/project-config.json`.
+
+Legacy `.openrouter-cli.json` files are still read and migrated into the project data directory.
 
 ```json
 {
@@ -10,6 +12,9 @@ The main configuration file is `.openrouter-cli.json`.
   "maxContextFiles": 40,
   "maxFileSizeKB": 100,
   "allowCommandExecution": false,
+  "autoAcceptEdits": false,
+  "autoAcceptCommands": false,
+  "maxToolIterations": 20,
   "ignoredPaths": [
     "node_modules",
     ".git",
@@ -27,25 +32,59 @@ The main configuration file is `.openrouter-cli.json`.
 
 ## API Key
 
-The OpenRouter API key is stored only in `.env`.
+For the MVP, the OpenRouter API key is stored in the project `.env`.
 
 ```bash
 OPENROUTER_API_KEY=...
 ```
 
-The setup flow updates only `OPENROUTER_API_KEY` and preserves other `.env` values.
+The setup flow updates only `OPENROUTER_API_KEY`, preserves other `.env` values, and writes global auth metadata for future keychain support.
+
+## Global App Data
+
+Global state is stored outside the project:
+
+```text
+Windows: %APPDATA%\openrouter-cli\
+Linux:   $XDG_CONFIG_HOME/openrouter-cli\ or ~/.config/openrouter-cli/
+macOS:   ~/Library/Application Support/openrouter-cli/
+```
+
+```text
+openrouter-cli/
+├── trusted.json
+├── global-config.json
+├── models-cache.json
+├── auth-metadata.json
+├── plugins/
+├── logs/
+└── cache/
+```
 
 ## Local State
 
-`openrouter-cli` stores local runtime state in `.openrouter-cli/`.
+Project-local runtime state stays in `.openrouter-cli/`.
 
 ```text
 .openrouter-cli/
 ├── history.json
-├── models-cache.json
-├── plugins.json
+├── project-config.json
+├── files-cache.json
 ├── mcp.json
+├── plugins.json
 └── plugins/
 ```
 
 These files are project-local and can be managed per repository.
+
+## Trust
+
+The trust database lives in global app data as `trusted.json`.
+
+Trust levels:
+
+- `TRUSTED PROJECT`: full access for the detected project root
+- `TRUSTED FOLDER`: full access for a folder and subprojects
+- `RESTRICTED`: read-only chat and explanation mode
+
+In restricted mode, edits, shell commands, plugins, MCP execution, auto edits, and auto commands are disabled.

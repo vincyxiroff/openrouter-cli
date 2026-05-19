@@ -12,6 +12,9 @@ describe("config migration", () => {
     expect(config.model).toBe("qwen/qwen3-coder:free");
     expect(config.temperature).toBe(0);
     expect(config.provider).toBe("openrouter");
+    expect(config.autoAcceptEdits).toBe(false);
+    expect(config.autoAcceptCommands).toBe(false);
+    expect(config.maxToolIterations).toBe(20);
     expect(config.ignoredPaths).toContain("custom-cache");
     expect(config.ignoredPaths).toContain("node_modules");
     expect(config.ignoredPaths).toContain(".env");

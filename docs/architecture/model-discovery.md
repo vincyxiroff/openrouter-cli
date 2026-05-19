@@ -11,7 +11,7 @@ Content-Type: application/json
 The model registry handles:
 
 - live model loading
-- six-hour cache in `.openrouter-cli/models-cache.json`
+- six-hour cache in the OS app-data `models-cache.json`
 - stale cache fallback
 - free model detection
 - search

@@ -1,9 +1,10 @@
 import { select } from "@inquirer/prompts";
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
 import ora from "ora";
 import { defaultConfig } from "../config/defaults.js";
 import { loadConfig } from "../config/loadConfig.js";
+import { ensureProjectData } from "../storage/project-data/projectData.js";
+import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
 import { AiProviderRegistry } from "../providers/registry/providerRegistry.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { theme } from "../terminal/theme.js";
@@ -44,6 +45,11 @@ export async function providerSetupCommand(cwd = process.cwd()): Promise<void> {
     : defaultConfig.model;
   const current = await loadConfig(cwd);
   const next = { ...current, provider: provider.id, model };
-  await writeFile(join(cwd, ".openrouter-cli.json"), `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  await ensureProjectData(cwd);
+  await writeFile(
+    getProjectDataPaths(cwd).projectConfig,
+    `${JSON.stringify(next, null, 2)}\n`,
+    "utf8"
+  );
   printInfo(`Provider configured: ${provider.name}`);
 }

@@ -55,8 +55,11 @@ export default {
 Plugins can register:
 
 - commands
+- slash commands
 - lifecycle hooks
 - tools
 - providers
 
 Failures are isolated. A plugin error should not crash the CLI.
+
+Plugins are disabled in restricted workspaces. Trust the project or folder before installing, enabling, disabling, or running plugins.

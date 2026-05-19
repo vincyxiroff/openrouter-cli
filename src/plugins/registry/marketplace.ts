@@ -1,4 +1,7 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { z } from "zod";
+import { getAppDataPaths } from "../../storage/paths/appDataPaths.js";
 
 export type MarketplacePlugin = {
   name: string;
@@ -25,11 +28,46 @@ const registrySchema = z.object({
 });
 
 export async function fetchMarketplace(url = defaultRegistryUrl): Promise<MarketplacePlugin[]> {
-  const response = await fetch(url);
+  const cached = await readCachedMarketplace();
 
-  if (!response.ok) {
-    throw new Error(`Plugin registry request failed with ${response.status}`);
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Plugin registry request failed with ${response.status}`);
+    }
+
+    const plugins = registrySchema.parse(await response.json()).plugins;
+    await writeCachedMarketplace(plugins);
+    return plugins;
+  } catch (error) {
+    if (cached) {
+      return cached;
+    }
+
+    throw error;
   }
+}
 
-  return registrySchema.parse(await response.json()).plugins;
+async function readCachedMarketplace(): Promise<MarketplacePlugin[] | undefined> {
+  const paths = await getAppDataPaths();
+
+  try {
+    const raw = JSON.parse(await readFile(paths.pluginRegistryCache, "utf8")) as {
+      plugins?: MarketplacePlugin[];
+    };
+    return Array.isArray(raw.plugins) ? raw.plugins : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function writeCachedMarketplace(plugins: MarketplacePlugin[]): Promise<void> {
+  const paths = await getAppDataPaths();
+  await mkdir(dirname(paths.pluginRegistryCache), { recursive: true });
+  await writeFile(
+    paths.pluginRegistryCache,
+    `${JSON.stringify({ fetchedAt: new Date().toISOString(), plugins }, null, 2)}\n`,
+    "utf8"
+  );
 }

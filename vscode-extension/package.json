@@ -2,7 +2,7 @@
   "name": "openrouter-cli-vscode",
   "displayName": "OpenRouter CLI",
   "description": "Use openrouter-cli inside VSCode.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "openrouter-cli",
   "license": "MIT",
   "repository": {
@@ -23,6 +23,8 @@
     "onCommand:openrouterCli.fixErrors",
     "onCommand:openrouterCli.refactor",
     "onCommand:openrouterCli.addDocumentation",
+    "onCommand:openrouterCli.trustStatus",
+    "onCommand:openrouterCli.openTerminal",
     "onView:openrouterCli.chatView"
   ],
   "main": "./dist/extension.js",
@@ -51,6 +53,14 @@
       {
         "command": "openrouterCli.addDocumentation",
         "title": "OpenRouter CLI: Add Documentation"
+      },
+      {
+        "command": "openrouterCli.trustStatus",
+        "title": "OpenRouter CLI: Trust Status"
+      },
+      {
+        "command": "openrouterCli.openTerminal",
+        "title": "OpenRouter CLI: Open Terminal"
       }
     ],
     "menus": {
@@ -73,6 +83,16 @@
         {
           "command": "openrouterCli.addDocumentation",
           "when": "editorHasSelection",
+          "group": "openrouter"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "openrouterCli.trustStatus",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.openTerminal",
           "group": "openrouter"
         }
       ]

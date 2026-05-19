@@ -2,16 +2,17 @@
 
 `orc edit` follows a strict file safety flow.
 
-1. Load `.openrouter-cli.json`.
-2. Build smart context from relevant files.
-3. Ask OpenRouter for a structured JSON edit plan.
-4. Validate the edit plan with Zod.
-5. Render a unified diff.
-6. Ask the user to approve file changes.
-7. Apply approved changes.
-8. Ask before running suggested commands.
-9. Save session history.
-10. Emit plugin lifecycle hooks.
+1. Resolve trust state.
+2. Load `.openrouter-cli/project-config.json` with legacy fallback.
+3. Build smart context from relevant files and `@file` mentions.
+4. Ask OpenRouter for a structured JSON edit plan.
+5. Validate the edit plan with Zod.
+6. Render a unified diff.
+7. Ask the user to approve file changes unless trusted auto edit mode is enabled.
+8. Apply approved changes.
+9. Ask before running suggested commands unless trusted auto command mode is enabled.
+10. Save session history.
+11. Emit plugin lifecycle hooks.
 
 The model response must match this shape:
 
@@ -30,4 +31,4 @@ The model response must match this shape:
 }
 ```
 
-The CLI validates paths and blocks sensitive files before writing.
+The CLI validates paths and blocks sensitive files before writing. In restricted workspaces, editing stops before the model is asked for an edit plan.

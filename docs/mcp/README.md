@@ -11,6 +11,7 @@ The MVP includes:
 - dynamic tool discovery
 - command surface for adding, listing, connecting, and removing servers
 - approval adapter for future tool execution
+- trust guard integration
 
 ## Commands
 
@@ -21,6 +22,8 @@ orc mcp connect filesystem
 orc mcp status
 orc mcp remove filesystem
 ```
+
+MCP connect, add, and remove operations require a trusted project or trusted folder.
 
 ## Tool Names
 

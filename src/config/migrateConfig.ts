@@ -1,8 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { defaultConfig } from "./defaults.js";
 import { configSchema } from "./schema.js";
 import type { AppConfig } from "../core/types.js";
+import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
 
 export type MigrationResult = {
   config: AppConfig;
@@ -10,14 +11,15 @@ export type MigrationResult = {
 };
 
 export async function migrateConfig(cwd = process.cwd()): Promise<MigrationResult> {
-  const path = resolve(cwd, ".openrouter-cli.json");
-  const raw = await readExistingConfig(path);
+  const path = getProjectDataPaths(cwd).projectConfig;
+  const legacyPath = join(cwd, ".openrouter-cli.json");
+  const raw = (await readExistingConfig(path)) ?? (await readExistingConfig(legacyPath));
   const parsed = raw ? (JSON.parse(raw) as Partial<AppConfig>) : {};
   const config = normalizeConfig(parsed);
   const normalized = `${JSON.stringify(config, null, 2)}\n`;
   const changed = raw !== normalized;
 
-  if (changed && raw) {
+  if (changed || raw) {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, normalized, "utf8");
   }

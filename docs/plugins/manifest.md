@@ -42,3 +42,5 @@ Enabled state is stored in:
   "enabled": ["github-plugin", "docker-plugin"]
 }
 ```
+
+Installed local plugin files live under `.openrouter-cli/plugins/`.

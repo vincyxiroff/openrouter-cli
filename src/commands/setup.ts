@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { confirm, number, password, select, Separator } from "@inquirer/prompts";
 import dotenv from "dotenv";
@@ -8,6 +8,9 @@ import { defaultConfig } from "../config/defaults.js";
 import { ensureGitignoreEntry, fileExists, upsertEnvValue } from "../config/envFile.js";
 import { loadConfig, readApiKey } from "../config/loadConfig.js";
 import type { AppConfig, ModelInfo } from "../core/types.js";
+import { writeAuthMetadata } from "../storage/app-data/authMetadata.js";
+import { ensureProjectData } from "../storage/project-data/projectData.js";
+import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
 import { header, printInfo, printMuted } from "../terminal/render.js";
 import { theme } from "../terminal/theme.js";
 
@@ -25,7 +28,7 @@ export async function setupCommand(options: SetupOptions = {}, cwd = process.cwd
     await resetSetup(cwd);
   }
 
-  await mkdir(join(cwd, ".openrouter-cli"), { recursive: true });
+  await ensureProjectData(cwd);
   await ensureGitignoreEntry(cwd, ".env");
 
   const key = options.model ? readApiKey() : await setupApiKey(cwd);
@@ -58,7 +61,10 @@ export async function setupCommand(options: SetupOptions = {}, cwd = process.cwd
 }
 
 export async function shouldRunFirstSetup(cwd = process.cwd()): Promise<boolean> {
-  return !(await fileExists(join(cwd, ".openrouter-cli.json")));
+  return (
+    !(await fileExists(getProjectDataPaths(cwd).projectConfig)) &&
+    !(await fileExists(join(cwd, ".openrouter-cli.json")))
+  );
 }
 
 async function resetSetup(cwd: string): Promise<void> {
@@ -78,6 +84,10 @@ async function setupApiKey(cwd: string): Promise<string> {
     try {
       await verifyApiKey(cwd, trimmed);
       await upsertEnvValue(cwd, "OPENROUTER_API_KEY", trimmed);
+      await writeAuthMetadata({
+        apiKeyStorage: "project-env",
+        updatedAt: new Date().toISOString()
+      });
       printInfo("API key verified");
       return trimmed;
     } catch (error) {
@@ -188,7 +198,10 @@ async function askConfig(cwd: string, config: AppConfig): Promise<AppConfig> {
 }
 
 async function maybeLoadConfig(cwd: string): Promise<AppConfig | undefined> {
-  if (!(await fileExists(join(cwd, ".openrouter-cli.json")))) {
+  if (
+    !(await fileExists(getProjectDataPaths(cwd).projectConfig)) &&
+    !(await fileExists(join(cwd, ".openrouter-cli.json")))
+  ) {
     return undefined;
   }
 
@@ -196,15 +209,17 @@ async function maybeLoadConfig(cwd: string): Promise<AppConfig | undefined> {
 }
 
 async function writeConfig(cwd: string, config: AppConfig): Promise<void> {
+  await ensureProjectData(cwd);
   await writeFile(
-    join(cwd, ".openrouter-cli.json"),
+    getProjectDataPaths(cwd).projectConfig,
     `${JSON.stringify(config, null, 2)}\n`,
     "utf8"
   );
 }
 
 async function ensureHistory(cwd: string): Promise<void> {
-  const path = join(cwd, ".openrouter-cli/history.json");
+  await ensureProjectData(cwd);
+  const path = getProjectDataPaths(cwd).history;
 
   if (!(await fileExists(path))) {
     await writeFile(path, "[]\n", "utf8");

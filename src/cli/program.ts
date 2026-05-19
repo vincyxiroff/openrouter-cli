@@ -3,6 +3,7 @@ import { askCommand } from "../commands/ask.js";
 import { chatCommand } from "../commands/chat.js";
 import { commitCommand } from "../commands/commit.js";
 import { contextCommand } from "../commands/context.js";
+import type { AutoApprovalOptions } from "../core/autoApproval.js";
 import { doctorCommand } from "../commands/doctor.js";
 import { editCommand } from "../commands/edit.js";
 import { explainCommand } from "../commands/explain.js";
@@ -32,6 +33,12 @@ import { providerSetupCommand, providersCommand } from "../commands/providers.js
 import { setupCommand, shouldRunFirstSetup } from "../commands/setup.js";
 import type { SetupOptions } from "../commands/setup.js";
 import { teamCommand, teamInitCommand } from "../commands/team.js";
+import {
+  trustCommand,
+  trustListCommand,
+  trustRemoveCommand,
+  trustResetCommand
+} from "../commands/trust.js";
 import { updateCommand } from "../commands/update.js";
 import { voiceCommand } from "../commands/voice.js";
 import type { VoiceOptions } from "../commands/voice.js";
@@ -41,6 +48,8 @@ import { printError } from "../terminal/render.js";
 import { maybeAutoUpdate } from "../update/autoUpdate.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { registerPluginCommands } from "../plugins/core/pluginManager.js";
+import { TrustManager } from "../trust/manager/trustManager.js";
+import { promptForTrust } from "../trust/ui/trustUi.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -57,6 +66,25 @@ export async function runCli(argv: string[]): Promise<void> {
       }
 
       await maybeAutoUpdate();
+      const trust = new TrustManager();
+      const state = await trust.state();
+
+      if (state.level === "restricted") {
+        const choice = await promptForTrust(process.cwd());
+
+        if (choice === "cancel") {
+          return;
+        }
+
+        if (choice === "project") {
+          await trust.trustProject();
+        }
+
+        if (choice === "folder") {
+          await trust.trustFolder();
+        }
+      }
+
       await chatCommand();
     });
 
@@ -64,13 +92,23 @@ export async function runCli(argv: string[]): Promise<void> {
     .command("ask")
     .argument("<prompt>")
     .description("Run a single-shot AI question")
-    .action(async (prompt: string) => askCommand(prompt));
+    .option("-y, --yes", "auto-accept edits and commands")
+    .option("--auto-edits", "auto-accept file edits")
+    .option("--auto-cmds", "auto-accept command execution")
+    .action(async (prompt: string, options: AutoApprovalOptions) =>
+      askCommand(prompt, process.cwd(), options)
+    );
 
   program
     .command("edit")
     .argument("<task>")
     .description("Run AI coding mode with diff approval")
-    .action(async (task: string) => editCommand(task));
+    .option("-y, --yes", "auto-accept edits and commands")
+    .option("--auto-edits", "auto-accept file edits")
+    .option("--auto-cmds", "auto-accept command execution")
+    .action(async (task: string, options: AutoApprovalOptions) =>
+      editCommand(task, process.cwd(), options)
+    );
 
   program
     .command("explain")
@@ -129,6 +167,24 @@ export async function runCli(argv: string[]): Promise<void> {
     .command("plugins")
     .description("List installed plugins")
     .action(async () => pluginsCommand());
+
+  const trust = program.command("trust").description("Manage project trust");
+
+  trust
+    .argument("[action]", "status, project, folder, remove, reset, or list")
+    .action(async (action?: string) => trustCommand(action));
+  trust
+    .command("list")
+    .description("List trusted projects and folders")
+    .action(async () => trustListCommand());
+  trust
+    .command("remove")
+    .description("Remove trust for the current project or folder")
+    .action(async () => trustRemoveCommand());
+  trust
+    .command("reset")
+    .description("Reset all trust entries")
+    .action(async () => trustResetCommand());
 
   const plugin = program.command("plugin").description("Manage plugins");
 

@@ -5,8 +5,10 @@ import { PluginLoader } from "../plugins/loader/pluginLoader.js";
 import { fetchMarketplace } from "../plugins/registry/marketplace.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { theme } from "../terminal/theme.js";
+import { TrustGuard } from "../trust/guards/trustGuard.js";
 
 export async function pluginsCommand(cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "plugins");
   const loader = createLoader(cwd);
   const plugins = await loader.listInstalled();
 
@@ -25,6 +27,7 @@ export async function pluginsCommand(cwd = process.cwd()): Promise<void> {
 }
 
 export async function pluginInstallCommand(name: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "plugins");
   const installed = await createLoader(cwd).install(name);
   printInfo(`Installed plugin: ${installed}`);
 }
@@ -65,16 +68,19 @@ export async function pluginUpdateCommand(name: string): Promise<void> {
 }
 
 export async function pluginRemoveCommand(name: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "plugins");
   await createLoader(cwd).remove(name);
   printInfo(`Removed plugin: ${name}`);
 }
 
 export async function pluginEnableCommand(name: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "plugins");
   await createLoader(cwd).enable(name);
   printInfo(`Enabled plugin: ${name}`);
 }
 
 export async function pluginDisableCommand(name: string, cwd = process.cwd()): Promise<void> {
+  await new TrustGuard().ensureTrusted(cwd, "plugins");
   await createLoader(cwd).disable(name);
   printInfo(`Disabled plugin: ${name}`);
 }

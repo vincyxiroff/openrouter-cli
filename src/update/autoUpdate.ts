@@ -1,9 +1,10 @@
 import { confirm } from "@inquirer/prompts";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname } from "node:path";
 import { execa } from "execa";
 import ora from "ora";
 import { packageName, packageVersion } from "../config/packageInfo.js";
+import { getAppDataPaths } from "../storage/paths/appDataPaths.js";
 import { printInfo, printMuted } from "../terminal/render.js";
 import { isNewerVersion } from "./version.js";
 
@@ -12,7 +13,6 @@ type UpdateCheck = {
   latestVersion?: string;
 };
 
-const updateCacheFile = ".openrouter-cli/update-check.json";
 const updateTtlMs = 6 * 60 * 60 * 1000;
 
 export async function maybeAutoUpdate(cwd = process.cwd()): Promise<void> {
@@ -90,14 +90,19 @@ async function promptUpdate(latestVersion: string): Promise<void> {
 }
 
 async function readUpdateCheck(cwd: string): Promise<UpdateCheck | undefined> {
+  void cwd;
+  const paths = await getAppDataPaths();
+
   try {
-    return JSON.parse(await readFile(join(cwd, updateCacheFile), "utf8")) as UpdateCheck;
+    return JSON.parse(await readFile(paths.updateCheck, "utf8")) as UpdateCheck;
   } catch {
     return undefined;
   }
 }
 
 async function writeUpdateCheck(cwd: string, check: UpdateCheck): Promise<void> {
-  await mkdir(join(cwd, ".openrouter-cli"), { recursive: true });
-  await writeFile(join(cwd, updateCacheFile), `${JSON.stringify(check, null, 2)}\n`, "utf8");
+  void cwd;
+  const paths = await getAppDataPaths();
+  await mkdir(dirname(paths.updateCheck), { recursive: true });
+  await writeFile(paths.updateCheck, `${JSON.stringify(check, null, 2)}\n`, "utf8");
 }

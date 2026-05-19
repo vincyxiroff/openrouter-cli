@@ -2,13 +2,14 @@
 
 When `orc mcp connect` runs, the CLI:
 
-1. Reads `.openrouter-cli/mcp.json`.
-2. Selects enabled servers.
-3. Starts stdio or HTTP transport.
-4. Sends `initialize`.
-5. Calls `tools/list`.
-6. Registers discovered tools with the MCP tool registry.
-7. Prints tool names and descriptions.
+1. Verifies the workspace is trusted.
+2. Reads `.openrouter-cli/mcp.json`.
+3. Selects enabled servers.
+4. Starts stdio or HTTP transport.
+5. Sends `initialize`.
+6. Calls `tools/list`.
+7. Registers discovered tools with the MCP tool registry.
+8. Prints tool names and descriptions.
 
 The CLI does not hardcode MCP tools.
 
@@ -25,7 +26,7 @@ filesystem.list_directory List files
 
 ## Security
 
-Future tool execution must pass through an approval layer. For example:
+Tool execution must pass through trust and approval layers. For example:
 
 ```text
 Allow MCP tool github.create_issue?
