@@ -31,6 +31,11 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
   const prompt = options.prompt ?? "> ";
   const input = process.stdin;
   const output = process.stdout;
+
+  if (!input.isTTY || !output.isTTY) {
+    return { type: "cancel" };
+  }
+
   const wasRaw = input.isRaw;
   let value = "";
   let selectedIndex = 0;

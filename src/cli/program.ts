@@ -59,6 +59,13 @@ export async function runCli(argv: string[]): Promise<void> {
     .description("The AI coding CLI powered by OpenRouter.")
     .version(packageVersion())
     .action(async () => {
+      if (!process.stdin.isTTY || !process.stdout.isTTY) {
+        printError(
+          'Interactive mode requires a terminal. Use `orc ask "..."` for non-interactive usage.'
+        );
+        return;
+      }
+
       if (await shouldRunFirstSetup()) {
         await setupCommand();
       } else {
