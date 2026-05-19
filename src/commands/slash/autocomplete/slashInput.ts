@@ -87,17 +87,12 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
         return;
       }
 
-      output.write(`\x1b[${renderedLines}F`);
-
-      for (let index = 0; index < renderedLines; index += 1) {
-        output.write("\x1b[2K");
-
-        if (index < renderedLines - 1) {
-          output.write("\x1b[1E");
-        }
+      if (renderedLines > 1) {
+        readline.moveCursor(output, 0, -(renderedLines - 1));
       }
 
-      output.write(`\x1b[${renderedLines}F`);
+      readline.cursorTo(output, 0);
+      readline.clearScreenDown(output);
       renderedLines = 0;
     };
 
