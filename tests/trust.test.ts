@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, parse } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import { TrustResolver } from "../src/trust/resolver/trustResolver.js";
@@ -48,8 +48,8 @@ describe("trust resolver", () => {
     expect(state.level).toBe("restricted");
   });
 
-  it("does not loop at a Windows drive root", () => {
-    const root = normalizePath("C:/");
-    expect(root).toBe("C:/");
+  it("does not strip a trailing slash from the current filesystem root", () => {
+    const root = normalizePath(parse(tmpdir()).root);
+    expect(root.endsWith("/") || /^[A-Z]:\/$/i.test(root)).toBe(true);
   });
 });
