@@ -16,6 +16,7 @@ describe("storage paths", () => {
     expect(paths.trusted).toBe(join(dir, "trusted.json"));
     expect(paths.globalConfig).toBe(join(dir, "global-config.json"));
     expect(paths.modelsCache).toBe(join(dir, "models-cache.json"));
+    expect(paths.apiKey).toBe(join(dir, "auth.json"));
     expect(paths.pluginRegistryCache).toBe(join(dir, "cache", "plugin-registry.json"));
   });
 

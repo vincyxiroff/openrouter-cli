@@ -9,6 +9,7 @@ export type AppDataPaths = {
   logs: string;
   cache: string;
   authMetadata: string;
+  apiKey: string;
   telemetry: string;
 };
 

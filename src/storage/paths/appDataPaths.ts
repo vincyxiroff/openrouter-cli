@@ -1,4 +1,5 @@
 import { mkdir } from "node:fs/promises";
+import { mkdirSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { join } from "node:path";
 import type { AppDataPaths } from "../types/storage.js";
@@ -6,9 +7,15 @@ import type { AppDataPaths } from "../types/storage.js";
 const appName = "openrouter-cli";
 
 export async function getAppDataDir(): Promise<string> {
+  const dir = getAppDataDirSync();
+  await mkdir(dir, { recursive: true });
+  return dir;
+}
+
+export function getAppDataDirSync(): string {
   const root = appDataRoot();
   const dir = join(root, appName);
-  await mkdir(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true });
   return dir;
 }
 
@@ -25,6 +32,7 @@ export async function getAppDataPaths(): Promise<AppDataPaths> {
     logs: join(root, "logs"),
     cache: join(root, "cache"),
     authMetadata: join(root, "auth-metadata.json"),
+    apiKey: join(root, "auth.json"),
     telemetry: join(root, "telemetry.json")
   };
 

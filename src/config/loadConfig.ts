@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import dotenv from "dotenv";
 import { normalizeConfig } from "./migrateConfig.js";
 import type { AppConfig } from "../core/types.js";
+import { readGlobalApiKeySync } from "../storage/app-data/apiKeyStore.js";
 import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
 
 export async function loadConfig(cwd = process.cwd()): Promise<AppConfig> {
@@ -26,5 +27,5 @@ export async function loadConfig(cwd = process.cwd()): Promise<AppConfig> {
 }
 
 export function readApiKey(): string | undefined {
-  return process.env.OPENROUTER_API_KEY;
+  return process.env.OPENROUTER_API_KEY ?? readGlobalApiKeySync();
 }

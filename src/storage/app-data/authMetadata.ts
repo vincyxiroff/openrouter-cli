@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { getAppDataPaths } from "../paths/appDataPaths.js";
 
 export type AuthMetadata = {
-  apiKeyStorage: "project-env" | "keychain";
+  apiKeyStorage: "project-env" | "global-app-data" | "keychain";
   keychainProvider?: "windows-credential-manager" | "macos-keychain" | "linux-secret-service";
   updatedAt: string;
 };

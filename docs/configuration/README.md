@@ -32,13 +32,13 @@ Legacy `.openrouter-cli.json` files are still read and migrated into the project
 
 ## API Key
 
-For the MVP, the OpenRouter API key is stored in the project `.env`.
+The OpenRouter API key is read from the current process environment, then from the project `.env`, then from global app-data storage.
 
 ```bash
 OPENROUTER_API_KEY=...
 ```
 
-The setup flow updates only `OPENROUTER_API_KEY`, preserves other `.env` values, and writes global auth metadata for future keychain support.
+The setup flow stores the key globally in `auth.json` so new folders can reuse it. A project `.env` can still override the global key. Global auth metadata is also written for future keychain support.
 
 ## Global App Data
 
@@ -55,6 +55,7 @@ openrouter-cli/
 ├── trusted.json
 ├── global-config.json
 ├── models-cache.json
+├── auth.json
 ├── auth-metadata.json
 ├── plugins/
 ├── logs/

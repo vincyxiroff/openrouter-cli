@@ -38,7 +38,7 @@ orc edit "fix TypeScript errors"
 orc models --free
 ```
 
-On first run, `orc` starts a guided setup that stores `OPENROUTER_API_KEY` in `.env`, verifies the key, downloads live models, creates `.openrouter-cli/project-config.json`, and asks whether to trust the current project.
+On first run, `orc` starts a guided setup that stores the OpenRouter API key globally, verifies the key, downloads live models, creates `.openrouter-cli/project-config.json`, and asks whether to trust the current project. A project `.env` can still override the global key.
 
 In interactive mode, type `/` for slash commands or `@` to mention files and folders.
 

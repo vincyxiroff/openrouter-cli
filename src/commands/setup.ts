@@ -8,6 +8,7 @@ import { defaultConfig } from "../config/defaults.js";
 import { ensureGitignoreEntry, fileExists, upsertEnvValue } from "../config/envFile.js";
 import { loadConfig, readApiKey } from "../config/loadConfig.js";
 import type { AppConfig, ModelInfo } from "../core/types.js";
+import { writeGlobalApiKey } from "../storage/app-data/apiKeyStore.js";
 import { writeAuthMetadata } from "../storage/app-data/authMetadata.js";
 import { ensureProjectData } from "../storage/project-data/projectData.js";
 import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
@@ -73,6 +74,23 @@ async function resetSetup(cwd: string): Promise<void> {
 }
 
 async function setupApiKey(cwd: string): Promise<string> {
+  const existing = readApiKey();
+
+  if (existing) {
+    try {
+      await verifyApiKey(cwd, existing);
+      await writeGlobalApiKey(existing);
+      await writeAuthMetadata({
+        apiKeyStorage: "global-app-data",
+        updatedAt: new Date().toISOString()
+      });
+      printInfo("Using saved OpenRouter API key");
+      return existing;
+    } catch {
+      printMuted("Saved OpenRouter API key could not be verified.");
+    }
+  }
+
   for (;;) {
     const apiKey = await password({
       message: "Enter your OpenRouter API key",
@@ -84,8 +102,9 @@ async function setupApiKey(cwd: string): Promise<string> {
     try {
       await verifyApiKey(cwd, trimmed);
       await upsertEnvValue(cwd, "OPENROUTER_API_KEY", trimmed);
+      await writeGlobalApiKey(trimmed);
       await writeAuthMetadata({
-        apiKeyStorage: "project-env",
+        apiKeyStorage: "global-app-data",
         updatedAt: new Date().toISOString()
       });
       printInfo("API key verified");
