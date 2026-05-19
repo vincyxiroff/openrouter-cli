@@ -25,7 +25,7 @@ The AI coding CLI powered by OpenRouter.
 ## Install
 
 ```bash
-npm install -g openrouter-cli-v2
+npm install -g openrouter-cli-v2@latest
 ```
 
 ## Quickstart
