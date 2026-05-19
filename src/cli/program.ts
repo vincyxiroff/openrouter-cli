@@ -45,7 +45,6 @@ import type { VoiceOptions } from "../commands/voice.js";
 import { migrateConfig } from "../config/migrateConfig.js";
 import { packageVersion } from "../config/packageInfo.js";
 import { printError } from "../terminal/render.js";
-import { maybeAutoUpdate } from "../update/autoUpdate.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { registerPluginCommands } from "../plugins/core/pluginManager.js";
 import { TrustManager } from "../trust/manager/trustManager.js";
@@ -72,7 +71,6 @@ export async function runCli(argv: string[]): Promise<void> {
         await migrateConfig();
       }
 
-      await maybeAutoUpdate();
       const trust = new TrustManager();
       const state = await trust.state();
 

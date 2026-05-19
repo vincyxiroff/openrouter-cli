@@ -47,4 +47,9 @@ describe("trust resolver", () => {
 
     expect(state.level).toBe("restricted");
   });
+
+  it("does not loop at a Windows drive root", () => {
+    const root = normalizePath("C:/");
+    expect(root).toBe("C:/");
+  });
 });

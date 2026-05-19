@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, parse, resolve } from "node:path";
 import { getAppDataPaths } from "../../storage/paths/appDataPaths.js";
 import type { TrustDatabase } from "../types/trust.js";
 
@@ -41,5 +41,8 @@ export class TrustStorage {
 }
 
 export function normalizePath(path: string): string {
-  return resolve(path).replaceAll("\\", "/").replace(/\/+$/, "");
+  const resolved = resolve(path);
+  const root = parse(resolved).root.replaceAll("\\", "/").replace(/\/+$/, "");
+  const normalized = resolved.replaceAll("\\", "/").replace(/\/+$/, "");
+  return normalized === root ? `${root}/` : normalized;
 }

@@ -1,5 +1,5 @@
 import { access } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, parse, resolve } from "node:path";
 import type { TrustDatabase, TrustState } from "../types/trust.js";
 import { normalizePath } from "../storage/trustStorage.js";
 
@@ -52,7 +52,7 @@ export class TrustResolver {
 
       const parent = normalizePath(dirname(current));
 
-      if (parent === current) {
+      if (parent === current || current === normalizePath(parse(current).root)) {
         return normalizePath(cwd);
       }
 

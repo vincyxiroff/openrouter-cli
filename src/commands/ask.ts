@@ -29,7 +29,9 @@ export async function askCommand(
 
   const spinner = ora("Building context").start();
   const mentionedFiles = await new MentionContextResolver(cwd, config).resolvePrompt(prompt);
-  const discoveredFiles = await buildContext(cwd, config, prompt);
+  const discoveredFiles = shouldBuildProjectContext(prompt, mentionedFiles.length)
+    ? await buildContext(cwd, config, prompt)
+    : [];
   const files = mergeContextFiles(mentionedFiles, discoveredFiles, config.maxContextFiles);
   const history = await readHistory(cwd);
   const runtime = await createPluginRuntime(cwd);
@@ -82,4 +84,35 @@ function mergeContextFiles(
   }
 
   return files.slice(0, limit);
+}
+
+function shouldBuildProjectContext(prompt: string, mentionCount: number): boolean {
+  if (mentionCount > 0) {
+    return true;
+  }
+
+  const normalized = prompt.toLowerCase();
+  const projectTerms = [
+    "code",
+    "project",
+    "repo",
+    "repository",
+    "file",
+    "folder",
+    "src",
+    "bug",
+    "error",
+    "typescript",
+    "javascript",
+    "function",
+    "class",
+    "explain",
+    "analyze",
+    "fix",
+    "debug",
+    "test",
+    "build"
+  ];
+
+  return projectTerms.some((term) => normalized.includes(term));
 }
