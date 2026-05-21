@@ -97,22 +97,27 @@ async function executeToolCall(call: ParsedToolCall, options: ToolLoopOptions): 
   const filesystemTool = getFilesystemToolName(call);
 
   if (filesystemTool) {
+    const path = call.input.path ?? call.input.file ?? call.input.file_path;
+
     if (filesystemTool === "write" && !options.autoAcceptFileWrites) {
-      const path = call.input.path ?? call.input.file ?? call.input.file_path ?? "<missing path>";
-      const write = await confirm({ message: `Write file: ${path}?`, default: false });
+      const write = await confirm({
+        message: `Write file: ${path ?? "<missing path>"}?`,
+        default: false
+      });
 
       if (!write) {
-        const message = `Skipped write: ${path}`;
+        const message = `Skipped write: ${path ?? "<missing path>"}`;
         printMuted(message);
         return message;
       }
     }
 
     try {
+      printMuted(formatFilesystemToolStart(filesystemTool, path));
       const result = await executeFilesystemToolCall(call, options.cwd);
 
       if (result.ok) {
-        printMuted(result.message.split("\n")[0] ?? `Tool ${call.name} completed.`);
+        printMuted(formatFilesystemToolDone(filesystemTool, path));
       } else {
         printMuted(result.message);
       }
@@ -186,6 +191,40 @@ async function executeToolCall(call: ParsedToolCall, options: ToolLoopOptions): 
     printMuted(message);
     return `${message}\nCommand: ${command}`;
   }
+}
+
+function formatFilesystemToolStart(
+  tool: "read" | "write" | "list",
+  path: string | undefined
+): string {
+  const target = path ?? "<missing path>";
+
+  if (tool === "read") {
+    return `Reading: ${target}`;
+  }
+
+  if (tool === "write") {
+    return `Writing: ${target}`;
+  }
+
+  return `Listing: ${target}`;
+}
+
+function formatFilesystemToolDone(
+  tool: "read" | "write" | "list",
+  path: string | undefined
+): string {
+  const target = path ?? "<missing path>";
+
+  if (tool === "read") {
+    return `Read: ${target}`;
+  }
+
+  if (tool === "write") {
+    return `Wrote to: ${target}`;
+  }
+
+  return `Listed: ${target}`;
 }
 
 function formatCommandResult(
