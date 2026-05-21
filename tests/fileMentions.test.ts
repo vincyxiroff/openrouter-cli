@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
@@ -6,6 +6,7 @@ import { defaultConfig } from "../src/config/defaults.js";
 import { MentionContextResolver } from "../src/mentions/context/mentionContextResolver.js";
 import { matchFileMentions } from "../src/mentions/matcher/fileMentionMatcher.js";
 import { parseFileMentions } from "../src/mentions/parser/fileMentionParser.js";
+import { loadFileMentionEntries } from "../src/mentions/scanner/fileMentionCache.js";
 import type { FileMentionEntry } from "../src/mentions/scanner/fileMentionScanner.js";
 
 describe("file mentions", () => {
@@ -60,5 +61,25 @@ describe("file mentions", () => {
     expect(files).toHaveLength(1);
     expect(files[0]?.path).toBe("src/index.ts");
     expect(files[0]?.content).toContain("value");
+  });
+
+  it("refreshes file mention cache when a root file is added", async () => {
+    const cwd = join(tmpdir(), `orc-mentions-cache-${Date.now()}`);
+    await mkdir(cwd, { recursive: true });
+    await writeFile(join(cwd, "package.json"), "{}\n", "utf8");
+
+    try {
+      expect(await loadFileMentionEntries(cwd, defaultConfig)).not.toContainEqual(
+        expect.objectContaining({ path: "index.html" })
+      );
+
+      await writeFile(join(cwd, "index.html"), "<!doctype html>\n", "utf8");
+      const entries = await loadFileMentionEntries(cwd, defaultConfig);
+
+      expect(entries).toContainEqual(expect.objectContaining({ path: "index.html", type: "file" }));
+      expect(matchFileMentions("index.", entries)[0]?.entry.path).toBe("index.html");
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
   });
 });

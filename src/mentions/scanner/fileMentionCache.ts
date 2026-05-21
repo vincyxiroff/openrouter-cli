@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { execa } from "execa";
 import type { AppConfig } from "../../core/types.js";
@@ -47,6 +47,7 @@ async function cacheKey(cwd: string, config: AppConfig): Promise<string> {
     config.maxFileSizeKB,
     config.maxContextFiles,
     config.ignoredPaths.join("|"),
+    await directorySignature(cwd),
     await mtime(join(cwd, "package.json")),
     await mtime(join(cwd, ".gitignore")),
     await mtime(join(cwd, "src")),
@@ -54,6 +55,24 @@ async function cacheKey(cwd: string, config: AppConfig): Promise<string> {
   ];
 
   return values.join("::");
+}
+
+async function directorySignature(path: string): Promise<string> {
+  try {
+    const entries = await readdir(path, { withFileTypes: true });
+    const rows = await Promise.all(
+      entries.map(async (entry) => {
+        const child = join(path, entry.name);
+        const info = await stat(child);
+        const type = entry.isDirectory() ? "dir" : entry.isFile() ? "file" : "other";
+        return `${entry.name}:${type}:${info.size}:${info.mtimeMs}`;
+      })
+    );
+
+    return rows.sort().join("|");
+  } catch {
+    return "";
+  }
 }
 
 async function mtime(path: string): Promise<string> {
