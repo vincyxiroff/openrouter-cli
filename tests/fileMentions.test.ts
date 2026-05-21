@@ -82,4 +82,23 @@ describe("file mentions", () => {
       await rm(cwd, { recursive: true, force: true });
     }
   });
+
+  it("does not expose internal openrouter cli files in mention suggestions", async () => {
+    const cwd = join(tmpdir(), `orc-mentions-internal-${Date.now()}`);
+    await mkdir(join(cwd, ".openrouter-cli"), { recursive: true });
+    await writeFile(join(cwd, ".openrouter-cli", "files-cache.json"), "{}\n", "utf8");
+    await writeFile(join(cwd, ".openrouter-cli.json"), "{}\n", "utf8");
+    await writeFile(join(cwd, "package.json"), "{}\n", "utf8");
+
+    try {
+      const entries = await loadFileMentionEntries(cwd, {
+        ...defaultConfig,
+        ignoredPaths: defaultConfig.ignoredPaths.filter((path) => !path.startsWith(".openrouter"))
+      });
+
+      expect(entries.some((entry) => entry.path.startsWith(".openrouter-cli"))).toBe(false);
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
 });

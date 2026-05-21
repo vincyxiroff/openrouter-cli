@@ -49,7 +49,12 @@ export class FileMentionScanner {
       const absolute = join(dir, entry.name);
       const path = toPosixPath(relative(this.cwd, absolute));
 
-      if (!path || matcher.ignores(path) || validateFilePath(path).ok !== true) {
+      if (
+        !path ||
+        isInternalProjectDataPath(path) ||
+        matcher.ignores(path) ||
+        validateFilePath(path).ok !== true
+      ) {
         continue;
       }
 
@@ -109,4 +114,12 @@ export class FileMentionScanner {
       return new Map();
     }
   }
+}
+
+function isInternalProjectDataPath(path: string): boolean {
+  return (
+    path === ".openrouter-cli.json" ||
+    path === ".openrouter-cli" ||
+    path.startsWith(".openrouter-cli/")
+  );
 }

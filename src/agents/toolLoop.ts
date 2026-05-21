@@ -73,6 +73,12 @@ export async function runToolLoop(options: ToolLoopOptions): Promise<ToolLoopRes
     messages.push({ role: "assistant", content: finalAnswer });
 
     if (toolCalls.length === 0) {
+      if (!finalAnswer.trim()) {
+        throw new UserFacingError(
+          "The model returned an empty response. Try again, or run /doctor if this keeps happening."
+        );
+      }
+
       return { finalAnswer, messages, iterations: toolIterations };
     }
 

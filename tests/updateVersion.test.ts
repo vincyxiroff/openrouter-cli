@@ -11,8 +11,23 @@ describe("version comparison", () => {
     expect(isNewerVersion("1.2.2", "1.2.3")).toBe(false);
   });
 
-  it("does not trust a fresh cache when it says the current version is latest", () => {
+  it("trusts a very fresh cache when it says the current version is latest", () => {
     const now = Date.parse("2026-05-21T12:00:00.000Z");
+
+    expect(
+      shouldUseCachedLatestVersion(
+        {
+          checkedAt: "2026-05-21T11:59:00.000Z",
+          latestVersion: "1.3.5"
+        },
+        "1.3.5",
+        now
+      )
+    ).toBe(true);
+  });
+
+  it("refreshes a stale cache when it says the current version is latest", () => {
+    const now = Date.parse("2026-05-21T12:10:00.000Z");
 
     expect(
       shouldUseCachedLatestVersion(

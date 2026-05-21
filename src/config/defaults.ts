@@ -13,6 +13,8 @@ export const defaultConfig: AppConfig = {
   ignoredPaths: [
     "node_modules",
     ".git",
+    ".openrouter-cli",
+    ".openrouter-cli.json",
     "dist",
     "build",
     ".next",

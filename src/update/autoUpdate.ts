@@ -20,6 +20,7 @@ export type VersionStatus = {
 };
 
 const updateTtlMs = 6 * 60 * 60 * 1000;
+const upToDateCheckTtlMs = 5 * 60 * 1000;
 
 export async function maybeAutoUpdate(cwd = process.cwd()): Promise<void> {
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -131,11 +132,17 @@ export function shouldUseCachedLatestVersion(
   currentVersion: string,
   now = Date.now()
 ): boolean {
-  return (
-    now - Date.parse(cached.checkedAt) < updateTtlMs &&
-    Boolean(cached.latestVersion) &&
-    isNewerVersion(cached.latestVersion ?? "", currentVersion)
-  );
+  const age = now - Date.parse(cached.checkedAt);
+
+  if (!cached.latestVersion) {
+    return false;
+  }
+
+  if (!isNewerVersion(cached.latestVersion, currentVersion)) {
+    return age < upToDateCheckTtlMs;
+  }
+
+  return age < updateTtlMs;
 }
 
 async function readUpdateCheck(cwd: string): Promise<UpdateCheck | undefined> {

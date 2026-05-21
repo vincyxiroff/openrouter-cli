@@ -142,6 +142,30 @@ describe("tool calls", () => {
     expect(requests[1]?.join("\n")).toContain("Tool results were executed");
   });
 
+  it("reports empty model responses instead of returning silently", async () => {
+    const provider: AiProvider = {
+      id: "test",
+      name: "Test",
+      kind: "local",
+      isAvailable: () => Promise.resolve(true),
+      listModels: () => Promise.resolve([]),
+      chat: () => Promise.resolve("")
+    };
+
+    await expect(
+      runToolLoop({
+        provider,
+        model: "test",
+        temperature: 0,
+        messages: [{ role: "user", content: "Say something" }],
+        cwd: process.cwd(),
+        allowCommandExecution: false,
+        autoAcceptCommands: false,
+        maxToolIterations: 20
+      })
+    ).rejects.toThrow("empty response");
+  });
+
   it("executes cross-platform read tool calls", async () => {
     const cwd = await mkdtemp(join(tmpdir(), "orc-tools-"));
     await writeFile(join(cwd, "note.txt"), "hello from file\n", "utf8");
@@ -288,6 +312,60 @@ describe("tool calls", () => {
 
       expect(result.finalAnswer).toBe("Delete done.");
       await expect(access(join(cwd, "old.txt"))).rejects.toThrow();
+    } finally {
+      process.env.APPDATA = previousAppData;
+      await rm(appData, { recursive: true, force: true });
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("reports a clean message when delete target is already missing", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "orc-tools-delete-missing-"));
+    const previousAppData = process.env.APPDATA;
+    const appData = await mkdtemp(join(tmpdir(), "orc-appdata-"));
+    process.env.APPDATA = appData;
+    await new TrustManager().trustProject(cwd);
+    const requests: string[][] = [];
+    const provider: AiProvider = {
+      id: "test",
+      name: "Test",
+      kind: "local",
+      isAvailable: () => Promise.resolve(true),
+      listModels: () => Promise.resolve([]),
+      chat: ({ messages }) => {
+        requests.push(messages.map((message) => message.content));
+
+        if (requests.length === 1) {
+          return Promise.resolve(
+            [
+              "<longcat_tool_call>Delete",
+              "<longcat_arg_key>path</longcat_arg_key>",
+              "<longcat_arg_value>missing.txt</longcat_arg_value>",
+              "</longcat_tool_call>"
+            ].join("\n")
+          );
+        }
+
+        return Promise.resolve("Delete checked.");
+      }
+    };
+
+    try {
+      const result = await runToolLoop({
+        provider,
+        model: "test",
+        temperature: 0,
+        messages: [{ role: "user", content: "Delete missing file" }],
+        cwd,
+        allowCommandExecution: false,
+        autoAcceptFileWrites: true,
+        autoAcceptCommands: false,
+        maxToolIterations: 20
+      });
+
+      expect(result.finalAnswer).toBe("Delete checked.");
+      expect(requests[1]?.join("\n")).toContain("does not exist");
+      expect(requests[1]?.join("\n")).not.toContain("ENOENT");
     } finally {
       process.env.APPDATA = previousAppData;
       await rm(appData, { recursive: true, force: true });

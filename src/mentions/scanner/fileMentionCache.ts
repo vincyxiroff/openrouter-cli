@@ -1,6 +1,7 @@
 import { mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { execa } from "execa";
+import ignore from "ignore";
 import type { AppConfig } from "../../core/types.js";
 import { getProjectDataPaths } from "../../storage/paths/projectDataPaths.js";
 import { FileMentionScanner, type FileMentionEntry } from "./fileMentionScanner.js";
@@ -47,7 +48,7 @@ async function cacheKey(cwd: string, config: AppConfig): Promise<string> {
     config.maxFileSizeKB,
     config.maxContextFiles,
     config.ignoredPaths.join("|"),
-    await directorySignature(cwd),
+    await directorySignature(cwd, config),
     await mtime(join(cwd, "package.json")),
     await mtime(join(cwd, ".gitignore")),
     await mtime(join(cwd, "src")),
@@ -57,11 +58,20 @@ async function cacheKey(cwd: string, config: AppConfig): Promise<string> {
   return values.join("::");
 }
 
-async function directorySignature(path: string): Promise<string> {
+async function directorySignature(path: string, config: AppConfig): Promise<string> {
   try {
+    const matcher = ignore().add([
+      ...config.ignoredPaths,
+      ".openrouter-cli",
+      ".openrouter-cli.json"
+    ]);
     const entries = await readdir(path, { withFileTypes: true });
     const rows = await Promise.all(
       entries.map(async (entry) => {
+        if (matcher.ignores(entry.name)) {
+          return "";
+        }
+
         const child = join(path, entry.name);
         const info = await stat(child);
         const type = entry.isDirectory() ? "dir" : entry.isFile() ? "file" : "other";
@@ -69,7 +79,7 @@ async function directorySignature(path: string): Promise<string> {
       })
     );
 
-    return rows.sort().join("|");
+    return rows.filter(Boolean).sort().join("|");
   } catch {
     return "";
   }

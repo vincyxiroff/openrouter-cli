@@ -4,7 +4,16 @@ import ignore from "ignore";
 import type { AppConfig, ContextFile } from "../core/types.js";
 import { toPosixPath } from "../utils/path.js";
 
-const secretPatterns = [".env", ".pem", "id_rsa", "id_ed25519", "credentials", "secret", "token"];
+const secretPatterns = [
+  ".env",
+  ".pem",
+  "id_rsa",
+  "id_ed25519",
+  "credentials",
+  "secret",
+  "token",
+  ".openrouter-cli"
+];
 
 const usefulExtensions = new Set([
   ".ts",

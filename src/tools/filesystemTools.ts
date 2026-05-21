@@ -182,7 +182,17 @@ async function deleteProjectFile(cwd: string, path: string | undefined): Promise
 
   await new TrustGuard().ensureTrusted(cwd, "editing");
   const safePath = validateProjectPath(cwd, path, "write");
-  const info = await stat(safePath.absolute);
+  let info: Awaited<ReturnType<typeof stat>>;
+
+  try {
+    info = await stat(safePath.absolute);
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      return { ok: false, message: `Delete skipped because ${safePath.display} does not exist.` };
+    }
+
+    throw error;
+  }
 
   if (info.isDirectory()) {
     return { ok: false, message: `Delete skipped because ${safePath.display} is a directory.` };
@@ -278,4 +288,13 @@ function trimToolOutput(output: string, maxLength = 12_000): string {
 
 export function formatFilesystemToolError(call: ParsedToolCall, error: unknown): string {
   return `Tool ${call.name} failed: ${getErrorMessage(error)}`;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
 }

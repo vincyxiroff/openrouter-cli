@@ -139,10 +139,22 @@ export class OpenRouterClient {
   private parseToken(payload: string): string {
     try {
       const data = JSON.parse(payload) as {
+        error?: { message?: string; code?: string | number };
         choices?: Array<{ delta?: { content?: string }; message?: { content?: string } }>;
       };
+
+      if (data.error) {
+        throw new UserFacingError(
+          data.error.message ?? `OpenRouter stream error${data.error.code ? `: ${data.error.code}` : ""}`
+        );
+      }
+
       return data.choices?.[0]?.delta?.content ?? data.choices?.[0]?.message?.content ?? "";
-    } catch {
+    } catch (error) {
+      if (error instanceof UserFacingError) {
+        throw error;
+      }
+
       return "";
     }
   }
