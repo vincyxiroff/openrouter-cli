@@ -246,7 +246,7 @@ async function runOrc(args: string[]): Promise<string> {
 }
 
 function streamOrc(args: string[], onChunk: (chunk: string) => void): ReturnType<typeof spawn> {
-  const child = spawn(getCommandName(), args, {
+  const child = spawn(getCommandName(), getProcessArgs(args), {
     cwd: getWorkspacePath(),
     shell: process.platform === "win32"
   });
@@ -255,6 +255,22 @@ function streamOrc(args: string[], onChunk: (chunk: string) => void): ReturnType
   child.stderr.on("data", (chunk: Buffer) => onChunk(chunk.toString("utf8")));
 
   return child;
+}
+
+function getProcessArgs(args: string[]): string[] {
+  if (process.platform !== "win32") {
+    return args;
+  }
+
+  return args.map(quoteCmdArg);
+}
+
+function quoteCmdArg(value: string): string {
+  if (!/[ \t\n\v"]/.test(value)) {
+    return value;
+  }
+
+  return `"${value.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, "$1$1")}"`;
 }
 
 function waitForProcess(child: ReturnType<typeof spawn>): Promise<void> {
@@ -317,7 +333,7 @@ function renderWebview(webview: vscode.Webview): string {
     body {
       margin: 0;
       color: var(--vscode-foreground);
-      background: var(--vscode-sideBar-background);
+      background: var(--vscode-editor-background);
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
     }
@@ -329,21 +345,27 @@ function renderWebview(webview: vscode.Webview): string {
     }
 
     header {
-      padding: 14px 14px 12px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border);
       background: var(--vscode-sideBar-background);
     }
 
-    .title-row {
+    .title-row,
+    .actions,
+    .composer-actions,
+    .toggles {
       display: flex;
       align-items: center;
+      gap: 8px;
+    }
+
+    .title-row {
       justify-content: space-between;
-      gap: 10px;
     }
 
     h1 {
       margin: 0;
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 700;
       letter-spacing: 0;
     }
@@ -351,61 +373,91 @@ function renderWebview(webview: vscode.Webview): string {
     .status {
       display: inline-flex;
       align-items: center;
-      min-width: 76px;
+      min-width: 68px;
       justify-content: center;
-      border: 1px solid var(--vscode-badge-background);
       color: var(--vscode-badge-foreground);
       background: var(--vscode-badge-background);
-      border-radius: 4px;
-      padding: 3px 7px;
+      border-radius: 999px;
+      padding: 2px 8px;
       font-size: 11px;
       font-weight: 700;
     }
 
-    .path {
-      margin-top: 8px;
+    .path,
+    .notice,
+    .meta {
       color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .path {
+      margin-top: 6px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 12px;
     }
 
     main {
       min-height: 0;
       overflow: auto;
-      padding: 12px;
+      padding: 14px 12px 18px;
     }
 
-    section {
-      margin-bottom: 14px;
+    .messages {
+      display: flex;
+      min-height: 100%;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    h2 {
-      margin: 0 0 8px;
-      font-size: 11px;
-      line-height: 1.3;
-      color: var(--vscode-descriptionForeground);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0;
-    }
-
-    .toolbar,
-    .grid {
+    .message {
       display: grid;
-      gap: 7px;
+      gap: 5px;
     }
 
-    .toolbar {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .message.user {
+      justify-items: end;
+    }
+
+    .message.assistant,
+    .message.system {
+      justify-items: start;
+    }
+
+    .bubble {
+      max-width: min(100%, 760px);
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: 8px;
+      padding: 9px 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.48;
+    }
+
+    .user .bubble {
+      color: var(--vscode-button-foreground);
+      background: var(--vscode-button-background);
+      border-color: var(--vscode-button-background);
+    }
+
+    .assistant .bubble {
+      color: var(--vscode-editor-foreground);
+      background: var(--vscode-sideBar-background);
+    }
+
+    .system .bubble {
+      color: var(--vscode-descriptionForeground);
+      background: var(--vscode-input-background);
+      font-family: var(--vscode-editor-font-family);
+      font-size: var(--vscode-editor-font-size);
     }
 
     button {
-      min-height: 30px;
+      min-height: 28px;
       border: 1px solid var(--vscode-button-border, transparent);
-      border-radius: 4px;
-      padding: 6px 8px;
+      border-radius: 5px;
+      padding: 5px 8px;
       color: var(--vscode-button-foreground);
       background: var(--vscode-button-background);
       font: inherit;
@@ -428,12 +480,13 @@ function renderWebview(webview: vscode.Webview): string {
 
     textarea {
       width: 100%;
-      min-height: 116px;
+      min-height: 70px;
+      max-height: 180px;
       resize: vertical;
       display: block;
       border: 1px solid var(--vscode-input-border);
-      border-radius: 4px;
-      padding: 9px;
+      border-radius: 7px;
+      padding: 10px;
       color: var(--vscode-input-foreground);
       background: var(--vscode-input-background);
       font-family: var(--vscode-font-family);
@@ -447,16 +500,28 @@ function renderWebview(webview: vscode.Webview): string {
       outline-offset: 1px;
     }
 
-    .toggles {
+    footer {
       display: grid;
-      gap: 7px;
-      margin: 8px 0;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
+      background: var(--vscode-sideBar-background);
+    }
+
+    .composer-actions {
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .actions,
+    .toggles {
+      flex-wrap: wrap;
     }
 
     label {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       color: var(--vscode-descriptionForeground);
       font-size: 12px;
     }
@@ -465,37 +530,6 @@ function renderWebview(webview: vscode.Webview): string {
       width: 14px;
       height: 14px;
       margin: 0;
-    }
-
-    pre {
-      margin: 0;
-      min-height: 140px;
-      max-height: 42vh;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      border: 1px solid var(--vscode-panel-border);
-      border-radius: 4px;
-      padding: 10px;
-      color: var(--vscode-editor-foreground);
-      background: var(--vscode-editor-background);
-      font-family: var(--vscode-editor-font-family);
-      font-size: var(--vscode-editor-font-size);
-      line-height: 1.45;
-    }
-
-    footer {
-      display: grid;
-      gap: 7px;
-      padding: 10px 12px 12px;
-      border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
-      background: var(--vscode-sideBar-background);
-    }
-
-    .quiet {
-      color: var(--vscode-descriptionForeground);
-      font-size: 12px;
-      line-height: 1.4;
     }
   </style>
 </head>
@@ -509,86 +543,109 @@ function renderWebview(webview: vscode.Webview): string {
       <div class="path" id="trustPath">Checking workspace authorization</div>
     </header>
 
-    <main>
-      <section>
-        <h2>Authorization</h2>
-        <div class="toolbar">
-          <button data-trust="project">Trust Project</button>
-          <button data-trust="folder" class="secondary">Trust Folder</button>
-          <button data-trust="status" class="secondary">Status</button>
-          <button data-trust="remove" class="secondary">Remove Trust</button>
+    <main id="scrollArea">
+      <div class="messages" id="messages">
+        <div class="message assistant">
+          <div class="meta">OpenRouter CLI</div>
+          <div class="bubble">Ask me about this workspace, or use Edit to open a terminal flow for approved file changes.</div>
         </div>
-      </section>
-
-      <section>
-        <h2>Ask</h2>
-        <textarea id="prompt" placeholder="Ask about this workspace"></textarea>
-        <div class="toolbar" style="margin-top: 8px;">
-          <button id="ask">Ask</button>
-          <button id="edit">Edit</button>
-        </div>
-        <div class="toggles">
-          <label><input id="autoEdits" type="checkbox"> Auto-apply file edits</label>
-          <label><input id="autoCommands" type="checkbox"> Auto-run approved commands</label>
-        </div>
-      </section>
-
-      <section>
-        <h2>Workspace</h2>
-        <div class="grid">
-          <button id="terminal" class="secondary">Open CLI Terminal</button>
-          <button id="setup" class="secondary">Setup</button>
-          <button id="doctor" class="secondary">Doctor</button>
-        </div>
-      </section>
-
-      <section>
-        <h2>Output</h2>
-        <pre id="output"></pre>
-      </section>
+      </div>
     </main>
 
     <footer>
-      <div class="quiet" id="notice">Ready.</div>
+      <textarea id="prompt" placeholder="Message OpenRouter CLI"></textarea>
+      <div class="composer-actions">
+        <div class="actions">
+          <button id="ask">Ask</button>
+          <button id="edit" class="secondary">Edit</button>
+          <button id="terminal" class="secondary">Terminal</button>
+          <button id="doctor" class="secondary">Doctor</button>
+        </div>
+        <div class="actions">
+          <button data-trust="project" class="secondary">Trust Project</button>
+          <button data-trust="status" class="secondary">Status</button>
+        </div>
+      </div>
+      <div class="toggles">
+        <label><input id="autoEdits" type="checkbox"> Auto edits</label>
+        <label><input id="autoCommands" type="checkbox"> Auto commands</label>
+      </div>
+      <div class="notice" id="notice">Ready.</div>
     </footer>
   </div>
 
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const prompt = document.getElementById("prompt");
-    const output = document.getElementById("output");
+    const messages = document.getElementById("messages");
+    const scrollArea = document.getElementById("scrollArea");
     const notice = document.getElementById("notice");
     const trustBadge = document.getElementById("trustBadge");
     const trustPath = document.getElementById("trustPath");
     const autoEdits = document.getElementById("autoEdits");
     const autoCommands = document.getElementById("autoCommands");
+    let activeAssistantBubble;
 
     const post = (message) => vscode.postMessage(message);
     const setNotice = (text) => {
       notice.textContent = text;
     };
+    const scrollToBottom = () => {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    };
+    const appendMessage = (role, text, label) => {
+      const message = document.createElement("div");
+      const meta = document.createElement("div");
+      const bubble = document.createElement("div");
+      message.className = "message " + role;
+      meta.className = "meta";
+      bubble.className = "bubble";
+      meta.textContent = label || (role === "user" ? "You" : "OpenRouter CLI");
+      bubble.textContent = text || "";
+      message.append(meta, bubble);
+      messages.append(message);
+      scrollToBottom();
+      return bubble;
+    };
+    const submitAsk = () => {
+      const text = prompt.value.trim();
+      if (!text) {
+        setNotice("Write a prompt first.");
+        return;
+      }
 
-    document.getElementById("ask").addEventListener("click", () => {
-      output.textContent = "";
-      setNotice("Running ask...");
-      post({ type: "ask", prompt: prompt.value });
+      appendMessage("user", text, "You");
+      activeAssistantBubble = appendMessage("assistant", "", "OpenRouter CLI");
+      setNotice("Streaming response...");
+      post({ type: "ask", prompt: text });
+      prompt.value = "";
+    };
+
+    document.getElementById("ask").addEventListener("click", submitAsk);
+    prompt.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        submitAsk();
+      }
     });
 
     document.getElementById("edit").addEventListener("click", () => {
+      const text = prompt.value.trim();
       setNotice("Opening edit terminal...");
+      appendMessage("user", text || "Open edit terminal", "You");
       post({
         type: "edit",
-        prompt: prompt.value,
+        prompt: text,
         autoEdits: autoEdits.checked,
         autoCommands: autoCommands.checked
       });
+      prompt.value = "";
     });
 
     document.getElementById("terminal").addEventListener("click", () => post({ type: "terminal" }));
-    document.getElementById("setup").addEventListener("click", () => post({ type: "setup" }));
     document.getElementById("doctor").addEventListener("click", () => {
-      output.textContent = "";
       setNotice("Running diagnostics...");
+      activeAssistantBubble = appendMessage("system", "", "Doctor");
       post({ type: "doctor" });
     });
 
@@ -603,20 +660,29 @@ function renderWebview(webview: vscode.Webview): string {
       const message = event.data;
 
       if (message.type === "run-start") {
-        output.textContent = "";
         setNotice("Streaming response...");
       }
 
       if (message.type === "chunk") {
-        output.textContent += message.chunk;
-        output.scrollTop = output.scrollHeight;
+        if (!activeAssistantBubble) {
+          activeAssistantBubble = appendMessage("assistant", "", "OpenRouter CLI");
+        }
+        activeAssistantBubble.textContent += message.chunk;
+        scrollToBottom();
       }
 
       if (message.type === "run-done") {
+        activeAssistantBubble = undefined;
         setNotice("Done.");
       }
 
       if (message.type === "run-error") {
+        if (activeAssistantBubble) {
+          activeAssistantBubble.textContent = message.text;
+          activeAssistantBubble = undefined;
+        } else {
+          appendMessage("system", message.text, "Error");
+        }
         setNotice(message.text);
       }
 
@@ -626,7 +692,6 @@ function renderWebview(webview: vscode.Webview): string {
 
       if (message.type === "trust") {
         const text = message.text || "";
-        output.textContent = text;
         trustBadge.textContent = text.includes("trusted-project")
           ? "Project"
           : text.includes("trusted-folder")
@@ -636,11 +701,17 @@ function renderWebview(webview: vscode.Webview): string {
               : "Status";
         const path = text.split("\\n").find((line) => line.toLowerCase().includes("path:"));
         trustPath.textContent = path ? path.replace(/^\\s*path:\\s*/i, "") : "Workspace authorization updated";
+        appendMessage("system", text, "Trust");
         setNotice("Authorization status refreshed.");
       }
 
       if (message.type === "diagnostics") {
-        output.textContent = message.text;
+        if (activeAssistantBubble) {
+          activeAssistantBubble.textContent = message.text;
+          activeAssistantBubble = undefined;
+        } else {
+          appendMessage("system", message.text, "Doctor");
+        }
         setNotice("Diagnostics complete.");
       }
     });

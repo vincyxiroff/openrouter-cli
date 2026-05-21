@@ -2,7 +2,7 @@
   "name": "openrouter-cli-vscode",
   "displayName": "OpenRouter CLI",
   "description": "A polished VS Code control center for OpenRouter CLI chat, edits, trust, setup, and diagnostics.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "openrouter-cli",
   "license": "MIT",
   "repository": {
