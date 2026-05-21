@@ -6,6 +6,11 @@ import { validateCommand } from "../safety/commands.js";
 import { printInfo, printMuted, renderMarkdown } from "../terminal/render.js";
 import { runShellCommandWithResult } from "../terminal/runCommand.js";
 import {
+  executeFilesystemToolCall,
+  formatFilesystemToolError,
+  getFilesystemToolName
+} from "../tools/filesystemTools.js";
+import {
   isShellToolCall,
   parseLongcatToolCalls,
   stripLongcatToolCalls,
@@ -20,6 +25,7 @@ export type ToolLoopOptions = {
   messages: ChatMessage[];
   cwd: string;
   allowCommandExecution: boolean;
+  autoAcceptFileWrites?: boolean;
   autoAcceptCommands: boolean;
   maxToolIterations: number;
   onToken?: (token: string) => void;
@@ -88,6 +94,37 @@ export async function runToolLoop(options: ToolLoopOptions): Promise<ToolLoopRes
 }
 
 async function executeToolCall(call: ParsedToolCall, options: ToolLoopOptions): Promise<string> {
+  const filesystemTool = getFilesystemToolName(call);
+
+  if (filesystemTool) {
+    if (filesystemTool === "write" && !options.autoAcceptFileWrites) {
+      const path = call.input.path ?? call.input.file ?? call.input.file_path ?? "<missing path>";
+      const write = await confirm({ message: `Write file: ${path}?`, default: false });
+
+      if (!write) {
+        const message = `Skipped write: ${path}`;
+        printMuted(message);
+        return message;
+      }
+    }
+
+    try {
+      const result = await executeFilesystemToolCall(call, options.cwd);
+
+      if (result.ok) {
+        printMuted(result.message.split("\n")[0] ?? `Tool ${call.name} completed.`);
+      } else {
+        printMuted(result.message);
+      }
+
+      return result.message;
+    } catch (error) {
+      const message = formatFilesystemToolError(call, error);
+      printMuted(message);
+      return message;
+    }
+  }
+
   if (!isShellToolCall(call)) {
     const message = `Unsupported tool: ${call.name}`;
     printMuted(message);

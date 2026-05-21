@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { runToolLoop } from "../src/agents/toolLoop.js";
 import type { AiProvider } from "../src/providers/types.js";
 import {
@@ -81,5 +84,52 @@ describe("tool calls", () => {
     expect(result.iterations).toBe(1);
     expect(requests).toHaveLength(2);
     expect(requests[1]?.join("\n")).toContain("Tool results were executed");
+  });
+
+  it("executes cross-platform read tool calls", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "orc-tools-"));
+    await writeFile(join(cwd, "note.txt"), "hello from file\n", "utf8");
+    const requests: string[][] = [];
+    const provider: AiProvider = {
+      id: "test",
+      name: "Test",
+      kind: "local",
+      isAvailable: () => Promise.resolve(true),
+      listModels: () => Promise.resolve([]),
+      chat: ({ messages }) => {
+        requests.push(messages.map((message) => message.content));
+
+        if (requests.length === 1) {
+          return Promise.resolve(
+            [
+              "<longcat_tool_call>Read",
+              "<longcat_arg_key>path</longcat_arg_key>",
+              "<longcat_arg_value>note.txt</longcat_arg_value>",
+              "</longcat_tool_call>"
+            ].join("\n")
+          );
+        }
+
+        return Promise.resolve("Read done.");
+      }
+    };
+
+    try {
+      const result = await runToolLoop({
+        provider,
+        model: "test",
+        temperature: 0,
+        messages: [{ role: "user", content: "Read note" }],
+        cwd,
+        allowCommandExecution: false,
+        autoAcceptCommands: false,
+        maxToolIterations: 20
+      });
+
+      expect(result.finalAnswer).toBe("Read done.");
+      expect(requests[1]?.join("\n")).toContain("hello from file");
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
   });
 });

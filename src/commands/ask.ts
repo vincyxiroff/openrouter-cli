@@ -50,6 +50,7 @@ export async function askCommand(
     messages,
     cwd,
     allowCommandExecution: config.allowCommandExecution,
+    autoAcceptFileWrites: auto.edits,
     autoAcceptCommands: auto.commands,
     maxToolIterations: config.maxToolIterations,
     onBeforeRequest: (requestMessages) => runtime.hooks.onBeforeRequest(requestMessages)
