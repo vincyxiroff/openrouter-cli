@@ -11,6 +11,8 @@ import { renderSlashSuggestions } from "../renderer/suggestions.js";
 import { theme } from "../../../terminal/theme.js";
 
 const ansiPattern = new RegExp(String.raw`\x1B\[[0-?]*[ -/]*[@-~]`, "g");
+const compactInputLength = 180;
+const outputPreviewLines = 12;
 
 export type SlashInputResult =
   | { type: "submit"; value: string }
@@ -25,6 +27,7 @@ export type SmartInputOptions = {
 };
 
 type SuggestionMode = "slash" | "file" | undefined;
+type InputViewMode = "compact" | "full" | "output";
 
 export async function readSlashInput(options: SmartInputOptions): Promise<SlashInputResult> {
   const registry = options.registry;
@@ -42,6 +45,8 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
   let suggestionsOpen = false;
   let suggestionMode: SuggestionMode;
   let renderedLines = 0;
+  let sawPaste = false;
+  let viewMode: InputViewMode = "compact";
 
   readline.emitKeypressEvents(input);
 
@@ -60,14 +65,18 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
       }
 
       clearRendered();
-      output.write(`${theme.title(prompt)}${value}\n`);
+      output.write(`${theme.title(prompt)}${formatInputPreview(value, viewMode).text}\n`);
       resolve(result);
     };
 
     const render = (): void => {
       clearRendered();
       const matches = currentMatches();
-      const body = [`${theme.title(prompt)}${value}`];
+      const preview = formatInputPreview(value, viewMode);
+      const body = [
+        `${theme.title(prompt)}${preview.text}`,
+        renderInputKeybinds(preview.compacted)
+      ];
 
       if (suggestionsOpen && suggestionMode === "slash") {
         body.push(renderSlashSuggestions(matches.slash, selectedIndex));
@@ -172,6 +181,18 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
         return;
       }
 
+      if (key.ctrl && key.name === "p") {
+        viewMode = viewMode === "full" ? "compact" : "full";
+        render();
+        return;
+      }
+
+      if (key.ctrl && key.name === "o") {
+        viewMode = viewMode === "output" ? "compact" : "output";
+        render();
+        return;
+      }
+
       if (key.name === "return") {
         if (
           suggestionsOpen &&
@@ -223,6 +244,7 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
 
       if (key.name === "backspace") {
         value = value.slice(0, -1);
+        sawPaste = sawPaste && shouldCompactInput(value);
         updateSuggestionMode();
         selectedIndex = 0;
         render();
@@ -230,7 +252,11 @@ export async function readSlashInput(options: SmartInputOptions): Promise<SlashI
       }
 
       if (chunk && !key.ctrl && !key.meta && chunk >= " ") {
+        sawPaste = sawPaste || chunk.length > 1 || chunk.includes("\n") || chunk.includes("\r");
         value += chunk;
+        if (sawPaste && shouldCompactInput(value) && viewMode === "full") {
+          viewMode = "compact";
+        }
         updateSuggestionMode();
         selectedIndex = 0;
         render();
@@ -252,4 +278,80 @@ function visualLineCount(value: string): number {
     const plain = line.replace(ansiPattern, "");
     return count + Math.max(1, Math.ceil(plain.length / width));
   }, 0);
+}
+
+export function formatInputPreview(
+  value: string,
+  mode: InputViewMode = "compact",
+  width = process.stdout.columns ?? 80
+): { text: string; compacted: boolean } {
+  if (!shouldCompactInput(value) || mode === "full") {
+    return { text: value, compacted: false };
+  }
+
+  if (mode === "output") {
+    return {
+      text: compactCommandOutput(value, width),
+      compacted: true
+    };
+  }
+
+  return {
+    text: compactPaste(value, width),
+    compacted: true
+  };
+}
+
+function shouldCompactInput(value: string): boolean {
+  return value.length > compactInputLength || /\r|\n/.test(value);
+}
+
+function compactPaste(value: string, width: number): string {
+  const normalized = value.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
+  const firstLine = lines.find((line) => line.trim()) ?? lines[0] ?? "";
+  const singleLine = normalized.replace(/\s+/g, " ").trim();
+  const summary = `${lines.length} lines, ${value.length} chars`;
+  const preview = firstLine.trim() || singleLine;
+  return `${truncateForPreview(preview, width)} ${theme.muted(`[pasted: ${summary}]`)}`;
+}
+
+function compactCommandOutput(value: string, width: number): string {
+  const lines = value.replace(/\r\n/g, "\n").split("\n");
+  const tail = lines.slice(-outputPreviewLines).join("\n").trimEnd();
+  const hidden = Math.max(0, lines.length - outputPreviewLines);
+
+  if (!tail) {
+    return compactPaste(value, width);
+  }
+
+  const label =
+    hidden > 0
+      ? theme.muted(`[command output: showing last ${outputPreviewLines} of ${lines.length} lines]`)
+      : theme.muted("[command output]");
+  return `${label}\n${truncateMultilineForPreview(tail, width)}`;
+}
+
+function truncateForPreview(value: string, width: number): string {
+  const max = Math.max(24, Math.min(96, width - 28));
+
+  if (value.length <= max) {
+    return value;
+  }
+
+  return `${value.slice(0, max - 1)}…`;
+}
+
+function truncateMultilineForPreview(value: string, width: number): string {
+  return value
+    .split("\n")
+    .map((line) => truncateForPreview(line, width))
+    .join("\n");
+}
+
+function renderInputKeybinds(compacted: boolean): string {
+  const pasteHint = compacted ? "Ctrl+P full paste" : "Ctrl+P compact paste";
+  return theme.muted(
+    `  Enter send · Tab accept · Esc close · ${pasteHint} · Ctrl+O command output`
+  );
 }
