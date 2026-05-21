@@ -113,7 +113,7 @@ async function promptUpdate(latestVersion: string): Promise<void> {
 async function getCachedOrLatestVersion(cwd: string): Promise<string | undefined> {
   const cached = await readUpdateCheck(cwd);
 
-  if (cached && Date.now() - Date.parse(cached.checkedAt) < updateTtlMs) {
+  if (cached && shouldUseCachedLatestVersion(cached, packageVersion(), Date.now())) {
     return cached.latestVersion;
   }
 
@@ -124,6 +124,18 @@ async function getCachedOrLatestVersion(cwd: string): Promise<string | undefined
   }
 
   return latestVersion ?? cached?.latestVersion;
+}
+
+export function shouldUseCachedLatestVersion(
+  cached: UpdateCheck,
+  currentVersion: string,
+  now = Date.now()
+): boolean {
+  return (
+    now - Date.parse(cached.checkedAt) < updateTtlMs &&
+    Boolean(cached.latestVersion) &&
+    isNewerVersion(cached.latestVersion ?? "", currentVersion)
+  );
 }
 
 async function readUpdateCheck(cwd: string): Promise<UpdateCheck | undefined> {
