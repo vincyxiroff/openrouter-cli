@@ -30,6 +30,23 @@ describe("file mentions", () => {
     expect(matchFileMentions("read", entries)[0]?.entry.path).toBe("README.md");
   });
 
+  it("prioritizes files inside a mentioned directory", () => {
+    const entries: FileMentionEntry[] = [
+      { path: "src/", type: "dir", size: 0 },
+      { path: "src/ai/", type: "dir", size: 0 },
+      { path: "src/tools/", type: "dir", size: 0 },
+      { path: "src/index.ts", type: "file", size: 10 },
+      { path: "src/ai/prompts.ts", type: "file", size: 10 },
+      { path: "src/tools/toolCalls.ts", type: "file", size: 10 }
+    ];
+
+    expect(
+      matchFileMentions("src", entries)
+        .map((match) => match.entry.path)
+        .slice(0, 3)
+    ).toEqual(["src/index.ts", "src/ai/prompts.ts", "src/tools/toolCalls.ts"]);
+  });
+
   it("resolves mentioned files into context", async () => {
     const cwd = join(tmpdir(), `orc-mentions-${Date.now()}`);
     await mkdir(join(cwd, "src"), { recursive: true });

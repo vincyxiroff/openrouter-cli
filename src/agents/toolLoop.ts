@@ -8,7 +8,8 @@ import { runShellCommandWithResult } from "../terminal/runCommand.js";
 import {
   executeFilesystemToolCall,
   formatFilesystemToolError,
-  getFilesystemToolName
+  getFilesystemToolName,
+  type FileToolName
 } from "../tools/filesystemTools.js";
 import {
   isShellToolCall,
@@ -99,14 +100,14 @@ async function executeToolCall(call: ParsedToolCall, options: ToolLoopOptions): 
   if (filesystemTool) {
     const path = call.input.path ?? call.input.file ?? call.input.file_path;
 
-    if (filesystemTool === "write" && !options.autoAcceptFileWrites) {
-      const write = await confirm({
-        message: `Write file: ${path ?? "<missing path>"}?`,
+    if (isMutatingFilesystemTool(filesystemTool) && !options.autoAcceptFileWrites) {
+      const approved = await confirm({
+        message: `${formatFilesystemToolAction(filesystemTool)} file: ${path ?? "<missing path>"}?`,
         default: false
       });
 
-      if (!write) {
-        const message = `Skipped write: ${path ?? "<missing path>"}`;
+      if (!approved) {
+        const message = `Skipped ${filesystemTool}: ${path ?? "<missing path>"}`;
         printMuted(message);
         return message;
       }
@@ -193,10 +194,27 @@ async function executeToolCall(call: ParsedToolCall, options: ToolLoopOptions): 
   }
 }
 
-function formatFilesystemToolStart(
-  tool: "read" | "write" | "list",
-  path: string | undefined
-): string {
+function isMutatingFilesystemTool(tool: FileToolName): boolean {
+  return tool === "write" || tool === "edit" || tool === "delete";
+}
+
+function formatFilesystemToolAction(tool: FileToolName): string {
+  if (tool === "write") {
+    return "Write";
+  }
+
+  if (tool === "edit") {
+    return "Edit";
+  }
+
+  if (tool === "delete") {
+    return "Delete";
+  }
+
+  return "Use";
+}
+
+function formatFilesystemToolStart(tool: FileToolName, path: string | undefined): string {
   const target = path ?? "<missing path>";
 
   if (tool === "read") {
@@ -207,13 +225,18 @@ function formatFilesystemToolStart(
     return `Writing: ${target}`;
   }
 
+  if (tool === "edit") {
+    return `Editing: ${target}`;
+  }
+
+  if (tool === "delete") {
+    return `Deleting: ${target}`;
+  }
+
   return `Listing: ${target}`;
 }
 
-function formatFilesystemToolDone(
-  tool: "read" | "write" | "list",
-  path: string | undefined
-): string {
+function formatFilesystemToolDone(tool: FileToolName, path: string | undefined): string {
   const target = path ?? "<missing path>";
 
   if (tool === "read") {
@@ -222,6 +245,14 @@ function formatFilesystemToolDone(
 
   if (tool === "write") {
     return `Wrote to: ${target}`;
+  }
+
+  if (tool === "edit") {
+    return `Edited: ${target}`;
+  }
+
+  if (tool === "delete") {
+    return `Deleted: ${target}`;
   }
 
   return `Listed: ${target}`;

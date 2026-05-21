@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { posix } from "node:path";
 import type { FileMentionEntry } from "../scanner/fileMentionScanner.js";
 
 export type FileMentionMatch = {
@@ -20,13 +20,18 @@ export function matchFileMentions(
       return { entry, score };
     })
     .filter((match) => match.score > 0 || !needle)
-    .sort((a, b) => b.score - a.score || a.entry.path.localeCompare(b.entry.path))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        Number(b.entry.type === "file") - Number(a.entry.type === "file") ||
+        a.entry.path.localeCompare(b.entry.path)
+    )
     .slice(0, limit);
 }
 
 function scoreEntry(query: string, entry: FileMentionEntry): number {
   const path = entry.path.toLowerCase();
-  const name = basename(path.replace(/\/$/, ""));
+  const name = posix.basename(path.replace(/\/$/, ""));
   const gitBoost = entry.status ? 90 : 0;
   const typeBoost = entry.type === "file" ? 8 : 0;
 
@@ -35,19 +40,19 @@ function scoreEntry(query: string, entry: FileMentionEntry): number {
   }
 
   if (path === query) {
-    return 1_000 + gitBoost;
+    return 1_000 + gitBoost + typeBoost;
   }
 
   if (path.startsWith(query)) {
-    return 850 + gitBoost - path.length;
+    return 850 + gitBoost + typeBoost + directoryFileBoost(query, entry) - path.length;
   }
 
   if (name.startsWith(query)) {
-    return 760 + gitBoost - name.length;
+    return 760 + gitBoost + typeBoost - name.length;
   }
 
   if (name.includes(query)) {
-    return 680 + gitBoost - name.length;
+    return 680 + gitBoost + typeBoost - name.length;
   }
 
   const fuzzy = fuzzyScore(query, path);
@@ -57,6 +62,22 @@ function scoreEntry(query: string, entry: FileMentionEntry): number {
   }
 
   return 0;
+}
+
+function directoryFileBoost(query: string, entry: FileMentionEntry): number {
+  if (entry.type !== "file" || !query) {
+    return 0;
+  }
+
+  const path = entry.path.toLowerCase();
+  const directoryQuery = query.endsWith("/") ? query : `${query}/`;
+
+  if (!path.startsWith(directoryQuery)) {
+    return 0;
+  }
+
+  const rest = path.slice(directoryQuery.length);
+  return rest.includes("/") ? 30 : 70;
 }
 
 function fuzzyScore(needle: string, haystack: string): number {

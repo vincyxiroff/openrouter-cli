@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { runToolLoop } from "../src/agents/toolLoop.js";
@@ -9,6 +9,7 @@ import {
   parseLongcatToolCalls,
   stripLongcatToolCalls
 } from "../src/tools/toolCalls.js";
+import { TrustManager } from "../src/trust/manager/trustManager.js";
 
 describe("tool calls", () => {
   it("parses longcat shell tool calls", () => {
@@ -65,7 +66,7 @@ describe("tool calls", () => {
         name: "Write",
         input: {
           path: "index.html",
-          content: "\n<!DOCTYPE html>\n<html lang=\"en\">\n<body>Tom & Jerry</body>\n</html>\n\n"
+          content: '\n<!DOCTYPE html>\n<html lang="en">\n<body>Tom & Jerry</body>\n</html>\n\n'
         }
       }
     ]);
@@ -184,6 +185,112 @@ describe("tool calls", () => {
       expect(result.finalAnswer).toBe("Read done.");
       expect(requests[1]?.join("\n")).toContain("hello from file");
     } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("executes cross-platform edit tool calls", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "orc-tools-edit-"));
+    const previousAppData = process.env.APPDATA;
+    const appData = await mkdtemp(join(tmpdir(), "orc-appdata-"));
+    process.env.APPDATA = appData;
+    await writeFile(join(cwd, "note.txt"), "hello from file\n", "utf8");
+    await new TrustManager().trustProject(cwd);
+    const provider: AiProvider = {
+      id: "test",
+      name: "Test",
+      kind: "local",
+      isAvailable: () => Promise.resolve(true),
+      listModels: () => Promise.resolve([]),
+      chat: ({ messages }) => {
+        if (messages.length === 1) {
+          return Promise.resolve(
+            [
+              "<longcat_tool_call>Edit",
+              "<longcat_arg_key>path</longcat_arg_key>",
+              "<longcat_arg_value>note.txt</longcat_arg_value>",
+              "<longcat_arg_key>old</longcat_arg_key>",
+              "<longcat_arg_value>hello</longcat_arg_value>",
+              "<longcat_arg_key>new</longcat_arg_key>",
+              "<longcat_arg_value>ciao</longcat_arg_value>",
+              "</longcat_tool_call>"
+            ].join("\n")
+          );
+        }
+
+        return Promise.resolve("Edit done.");
+      }
+    };
+
+    try {
+      const result = await runToolLoop({
+        provider,
+        model: "test",
+        temperature: 0,
+        messages: [{ role: "user", content: "Edit note" }],
+        cwd,
+        allowCommandExecution: false,
+        autoAcceptFileWrites: true,
+        autoAcceptCommands: false,
+        maxToolIterations: 20
+      });
+
+      expect(result.finalAnswer).toBe("Edit done.");
+      await expect(readFile(join(cwd, "note.txt"), "utf8")).resolves.toBe("ciao from file\n");
+    } finally {
+      process.env.APPDATA = previousAppData;
+      await rm(appData, { recursive: true, force: true });
+      await rm(cwd, { recursive: true, force: true });
+    }
+  });
+
+  it("executes cross-platform delete tool calls", async () => {
+    const cwd = await mkdtemp(join(tmpdir(), "orc-tools-delete-"));
+    const previousAppData = process.env.APPDATA;
+    const appData = await mkdtemp(join(tmpdir(), "orc-appdata-"));
+    process.env.APPDATA = appData;
+    await writeFile(join(cwd, "old.txt"), "remove me\n", "utf8");
+    await new TrustManager().trustProject(cwd);
+    const provider: AiProvider = {
+      id: "test",
+      name: "Test",
+      kind: "local",
+      isAvailable: () => Promise.resolve(true),
+      listModels: () => Promise.resolve([]),
+      chat: ({ messages }) => {
+        if (messages.length === 1) {
+          return Promise.resolve(
+            [
+              "<longcat_tool_call>Delete",
+              "<longcat_arg_key>path</longcat_arg_key>",
+              "<longcat_arg_value>old.txt</longcat_arg_value>",
+              "</longcat_tool_call>"
+            ].join("\n")
+          );
+        }
+
+        return Promise.resolve("Delete done.");
+      }
+    };
+
+    try {
+      const result = await runToolLoop({
+        provider,
+        model: "test",
+        temperature: 0,
+        messages: [{ role: "user", content: "Delete old file" }],
+        cwd,
+        allowCommandExecution: false,
+        autoAcceptFileWrites: true,
+        autoAcceptCommands: false,
+        maxToolIterations: 20
+      });
+
+      expect(result.finalAnswer).toBe("Delete done.");
+      await expect(access(join(cwd, "old.txt"))).rejects.toThrow();
+    } finally {
+      process.env.APPDATA = previousAppData;
+      await rm(appData, { recursive: true, force: true });
       await rm(cwd, { recursive: true, force: true });
     }
   });
