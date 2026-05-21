@@ -13,10 +13,11 @@ import { createPluginRuntime } from "../plugins/core/pluginManager.js";
 import { header, printMuted } from "../terminal/render.js";
 import { TrustManager } from "../trust/manager/trustManager.js";
 import { renderTrustState } from "../trust/ui/trustUi.js";
+import { getVersionStatus } from "../update/autoUpdate.js";
 import { getErrorMessage } from "../utils/errors.js";
 
 export async function chatCommand(cwd = process.cwd()): Promise<void> {
-  console.log(header());
+  console.log(header(await getVersionStatus(cwd)));
   const spinner = ora("Starting interactive session").start();
   const runtime = await createPluginRuntime(cwd);
   const slashRegistry = await createSlashRegistry(cwd, runtime);

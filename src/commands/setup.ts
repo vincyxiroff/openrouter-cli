@@ -14,6 +14,7 @@ import { ensureProjectData } from "../storage/project-data/projectData.js";
 import { getProjectDataPaths } from "../storage/paths/projectDataPaths.js";
 import { header, printInfo, printMuted } from "../terminal/render.js";
 import { theme } from "../terminal/theme.js";
+import { getVersionStatus } from "../update/autoUpdate.js";
 
 export type SetupOptions = {
   reset?: boolean;
@@ -23,7 +24,7 @@ export type SetupOptions = {
 
 export async function setupCommand(options: SetupOptions = {}, cwd = process.cwd()): Promise<void> {
   dotenv.config({ path: join(cwd, ".env") });
-  console.log(header());
+  console.log(header(await getVersionStatus(cwd)));
 
   if (options.reset) {
     await resetSetup(cwd);

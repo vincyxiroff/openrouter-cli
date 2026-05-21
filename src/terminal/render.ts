@@ -1,6 +1,7 @@
 import boxen from "boxen";
 import MarkdownIt from "markdown-it";
 import { highlight } from "cli-highlight";
+import { packageVersion } from "../config/packageInfo.js";
 import { theme } from "./theme.js";
 
 const markdown = new MarkdownIt({
@@ -9,9 +10,21 @@ const markdown = new MarkdownIt({
   typographer: true
 });
 
-export function header(): string {
+export type HeaderVersionInfo = {
+  currentVersion?: string;
+  latestVersion?: string | undefined;
+  updateAvailable?: boolean;
+};
+
+export function header(version: HeaderVersionInfo = {}): string {
+  const currentVersion = version.currentVersion ?? packageVersion();
+  const update =
+    version.updateAvailable && version.latestVersion
+      ? ` ${theme.warning(`(update available: v${version.latestVersion})`)}`
+      : "";
+
   return boxen(
-    `${theme.title("openrouter-cli")}\n${theme.muted("The AI coding CLI powered by OpenRouter.")}`,
+    `${theme.title(`openrouter-cli v${currentVersion}`)}${update}\n${theme.muted("The AI coding CLI powered by OpenRouter.")}`,
     {
       padding: 1,
       borderColor: "#7c5cff",

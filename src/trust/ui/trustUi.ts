@@ -4,6 +4,7 @@ import { relative } from "node:path";
 import { homedir } from "node:os";
 import { header, printInfo, printMuted } from "../../terminal/render.js";
 import { theme } from "../../terminal/theme.js";
+import { getVersionStatus } from "../../update/autoUpdate.js";
 import { TrustManager } from "../manager/trustManager.js";
 import type { TrustChoice, TrustLevel, TrustState } from "../types/trust.js";
 
@@ -30,7 +31,7 @@ export function formatPath(path: string): string {
 export async function promptForTrust(cwd: string): Promise<TrustChoice> {
   const manager = new TrustManager();
   const state = await manager.state(cwd);
-  console.log(header());
+  console.log(header(await getVersionStatus(cwd)));
   console.log(
     boxen(
       [

@@ -13,6 +13,12 @@ type UpdateCheck = {
   latestVersion?: string;
 };
 
+export type VersionStatus = {
+  currentVersion: string;
+  latestVersion?: string | undefined;
+  updateAvailable: boolean;
+};
+
 const updateTtlMs = 6 * 60 * 60 * 1000;
 
 export async function maybeAutoUpdate(cwd = process.cwd()): Promise<void> {
@@ -44,16 +50,31 @@ export async function maybeAutoUpdate(cwd = process.cwd()): Promise<void> {
 }
 
 export async function fetchLatestVersion(): Promise<string | undefined> {
-  const result = await execa("npm", ["view", packageName(), "version"], {
-    reject: false,
-    timeout: 7000
-  });
+  try {
+    const result = await execa("npm", ["view", packageName(), "version"], {
+      reject: false,
+      timeout: 7000
+    });
 
-  if (result.exitCode !== 0) {
+    if (result.exitCode !== 0) {
+      return undefined;
+    }
+
+    return result.stdout.trim() || undefined;
+  } catch {
     return undefined;
   }
+}
 
-  return result.stdout.trim() || undefined;
+export async function getVersionStatus(cwd = process.cwd()): Promise<VersionStatus> {
+  const currentVersion = packageVersion();
+  const latestVersion = await getCachedOrLatestVersion(cwd);
+
+  return {
+    currentVersion,
+    latestVersion,
+    updateAvailable: latestVersion ? isNewerVersion(latestVersion, currentVersion) : false
+  };
 }
 
 export async function installLatestVersion(latestVersion: string): Promise<boolean> {
@@ -87,6 +108,22 @@ async function promptUpdate(latestVersion: string): Promise<void> {
   if (updated) {
     printMuted("Restart orc to run the updated version.");
   }
+}
+
+async function getCachedOrLatestVersion(cwd: string): Promise<string | undefined> {
+  const cached = await readUpdateCheck(cwd);
+
+  if (cached && Date.now() - Date.parse(cached.checkedAt) < updateTtlMs) {
+    return cached.latestVersion;
+  }
+
+  const latestVersion = await fetchLatestVersion();
+
+  if (latestVersion) {
+    await writeUpdateCheck(cwd, { checkedAt: new Date().toISOString(), latestVersion });
+  }
+
+  return latestVersion ?? cached?.latestVersion;
 }
 
 async function readUpdateCheck(cwd: string): Promise<UpdateCheck | undefined> {
