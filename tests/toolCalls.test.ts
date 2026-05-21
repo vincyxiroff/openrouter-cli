@@ -42,6 +42,61 @@ describe("tool calls", () => {
     expect(stripLongcatToolCalls(content)).toBe("PrimaDopo");
   });
 
+  it("parses escaped html write content without trimming it", () => {
+    const content = [
+      "<longcat_tool_call>Write",
+      "<longcat_arg_key>path</longcat_arg_key>",
+      "<longcat_arg_value>index.html</longcat_arg_value>",
+      "<longcat_arg_key>content</longcat_arg_key>",
+      "<longcat_arg_value>",
+      "&lt;!DOCTYPE html&gt;",
+      "&lt;html lang=&quot;en&quot;&gt;",
+      "&lt;body&gt;Tom &amp; Jerry&lt;/body&gt;",
+      "&lt;/html&gt;",
+      "",
+      "</longcat_arg_value>",
+      "</longcat_tool_call>"
+    ].join("\n");
+
+    const calls = parseLongcatToolCalls(content);
+
+    expect(calls).toEqual([
+      {
+        name: "Write",
+        input: {
+          path: "index.html",
+          content: "\n<!DOCTYPE html>\n<html lang=\"en\">\n<body>Tom & Jerry</body>\n</html>\n\n"
+        }
+      }
+    ]);
+  });
+
+  it("recovers a trailing longcat tool call when only the tool close tag is missing", () => {
+    const content = [
+      "<longcat_tool_call>Write",
+      "<longcat_arg_key>path</longcat_arg_key>",
+      "<longcat_arg_value>index.html</longcat_arg_value>",
+      "<longcat_arg_key>content</longcat_arg_key>",
+      "<longcat_arg_value>Hello</longcat_arg_value>"
+    ].join("\n");
+
+    expect(parseLongcatToolCalls(content)).toEqual([
+      {
+        name: "Write",
+        input: {
+          path: "index.html",
+          content: "Hello"
+        }
+      }
+    ]);
+  });
+
+  it("strips malformed trailing longcat tool calls from display text", () => {
+    const content = "Prima\n<longcat_tool_call>Write\n<longcat_arg_key>content";
+
+    expect(stripLongcatToolCalls(content)).toBe("Prima");
+  });
+
   it("continues the conversation after tool results", async () => {
     const requests: string[][] = [];
     const provider: AiProvider = {

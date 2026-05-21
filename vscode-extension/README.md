@@ -1,20 +1,19 @@
 # openrouter-cli-vscode
 
-Official VS Code extension MVP for `openrouter-cli`.
+Official VS Code extension for `openrouter-cli`.
 
 The extension uses `orc` as its backend instead of duplicating agent logic.
 
 ## Features
 
-- Sidebar chat webview
-- Streamed output from `orc`
-- Explain selected code
-- Fix selected code
-- Refactor selected code
-- Add documentation to selected code
-- Trust status command
-- Open an interactive `orc` terminal in the workspace
-- Terminal/output integration
+- Polished sidebar control center
+- Streamed workspace chat through `orc ask`
+- Trust controls for project, folder, status, and removal
+- Edit flow through `orc edit` with terminal diff approval
+- Optional auto-edit and auto-command toggles for trusted workspaces
+- Explain selected code from the editor context menu
+- Fix, refactor, and document selected code from the editor context menu
+- Setup, doctor, and interactive terminal actions
 
 ## Requirements
 
@@ -27,6 +26,8 @@ orc setup
 
 Trust is managed by the CLI. If a workspace is restricted, use `OpenRouter CLI: Trust Status` or open an `orc` terminal and run `/trust`.
 
+Edits are opened in an integrated terminal so the CLI can show diffs and ask for approval before writing files.
+
 ## Commands
 
 - OpenRouter CLI: Chat
@@ -36,4 +37,7 @@ Trust is managed by the CLI. If a workspace is restricted, use `OpenRouter CLI: 
 - OpenRouter CLI: Refactor
 - OpenRouter CLI: Add Documentation
 - OpenRouter CLI: Trust Status
+- OpenRouter CLI: Trust Project
+- OpenRouter CLI: Trust Folder
+- OpenRouter CLI: Remove Trust
 - OpenRouter CLI: Open Terminal

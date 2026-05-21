@@ -4,38 +4,33 @@ export type ParsedToolCall = {
 };
 
 const toolCallPattern = /<longcat_tool_call>([\s\S]*?)<\/longcat_tool_call>/g;
-const argumentPattern =
-  /<longcat_arg_key>([\s\S]*?)<\/longcat_arg_key>\s*<longcat_arg_value>([\s\S]*?)<\/longcat_arg_value>/g;
+const toolCallStart = "<longcat_tool_call>";
+const argumentStartPattern =
+  /<longcat_arg_key>([\s\S]*?)<\/longcat_arg_key>\s*<longcat_arg_value>/g;
+const argumentEnd = "</longcat_arg_value>";
 
 export function parseLongcatToolCalls(content: string): ParsedToolCall[] {
   const calls: ParsedToolCall[] = [];
+  let lastClosedToolCallEnd = 0;
 
   for (const match of content.matchAll(toolCallPattern)) {
     const body = match[1] ?? "";
-    const lines = body
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const name = lines.find((line) => !line.startsWith("<")) ?? "tool";
-    const input: Record<string, string> = {};
+    calls.push(parseToolCallBody(body));
+    lastClosedToolCallEnd = (match.index ?? 0) + match[0].length;
+  }
 
-    for (const argument of body.matchAll(argumentPattern)) {
-      const key = decodeXml(argument[1] ?? "").trim();
-      const value = decodeXml(argument[2] ?? "").trim();
+  const trailingToolCallStart = content.indexOf(toolCallStart, lastClosedToolCallEnd);
 
-      if (key) {
-        input[key] = value;
-      }
-    }
-
-    calls.push({ name, input });
+  if (trailingToolCallStart !== -1) {
+    const body = content.slice(trailingToolCallStart + toolCallStart.length);
+    calls.push(parseToolCallBody(body));
   }
 
   return calls;
 }
 
 export function stripLongcatToolCalls(content: string): string {
-  return content.replace(toolCallPattern, "").trim();
+  return content.replace(toolCallPattern, "").replace(/<longcat_tool_call>[\s\S]*$/, "").trim();
 }
 
 export function isShellToolCall(call: ParsedToolCall): boolean {
@@ -49,4 +44,42 @@ function decodeXml(value: string): string {
     .replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">")
     .replaceAll("&amp;", "&");
+}
+
+function parseToolCallBody(body: string): ParsedToolCall {
+  const lines = body
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const name = lines.find((line) => !line.startsWith("<")) ?? "tool";
+
+  return {
+    name,
+    input: parseArguments(body)
+  };
+}
+
+function parseArguments(body: string): Record<string, string> {
+  const input: Record<string, string> = {};
+
+  for (const argument of body.matchAll(argumentStartPattern)) {
+    const key = decodeXml(argument[1] ?? "").trim();
+
+    if (!key) {
+      continue;
+    }
+
+    const valueStart = argument.index + argument[0].length;
+    const valueEnd = body.indexOf(argumentEnd, valueStart);
+
+    if (valueEnd === -1) {
+      continue;
+    }
+
+    const rawValue = body.slice(valueStart, valueEnd);
+    const value = decodeXml(rawValue);
+    input[key] = key === "content" ? value : value.trim();
+  }
+
+  return input;
 }

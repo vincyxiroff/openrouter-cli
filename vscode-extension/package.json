@@ -1,8 +1,8 @@
 {
   "name": "openrouter-cli-vscode",
   "displayName": "OpenRouter CLI",
-  "description": "Use openrouter-cli inside VSCode.",
-  "version": "0.1.1",
+  "description": "A polished VS Code control center for OpenRouter CLI chat, edits, trust, setup, and diagnostics.",
+  "version": "0.2.0",
   "publisher": "openrouter-cli",
   "license": "MIT",
   "repository": {
@@ -16,6 +16,14 @@
     "AI",
     "Other"
   ],
+  "keywords": [
+    "openrouter",
+    "ai",
+    "coding-agent",
+    "chat",
+    "code-editing",
+    "cli"
+  ],
   "activationEvents": [
     "onCommand:openrouterCli.chat",
     "onCommand:openrouterCli.explain",
@@ -24,6 +32,9 @@
     "onCommand:openrouterCli.refactor",
     "onCommand:openrouterCli.addDocumentation",
     "onCommand:openrouterCli.trustStatus",
+    "onCommand:openrouterCli.trustProject",
+    "onCommand:openrouterCli.trustFolder",
+    "onCommand:openrouterCli.removeTrust",
     "onCommand:openrouterCli.openTerminal",
     "onView:openrouterCli.chatView"
   ],
@@ -59,6 +70,18 @@
         "title": "OpenRouter CLI: Trust Status"
       },
       {
+        "command": "openrouterCli.trustProject",
+        "title": "OpenRouter CLI: Trust Project"
+      },
+      {
+        "command": "openrouterCli.trustFolder",
+        "title": "OpenRouter CLI: Trust Folder"
+      },
+      {
+        "command": "openrouterCli.removeTrust",
+        "title": "OpenRouter CLI: Remove Trust"
+      },
+      {
         "command": "openrouterCli.openTerminal",
         "title": "OpenRouter CLI: Open Terminal"
       }
@@ -92,6 +115,18 @@
           "group": "openrouter"
         },
         {
+          "command": "openrouterCli.trustProject",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.trustFolder",
+          "group": "openrouter"
+        },
+        {
+          "command": "openrouterCli.removeTrust",
+          "group": "openrouter"
+        },
+        {
           "command": "openrouterCli.openTerminal",
           "group": "openrouter"
         }
@@ -121,7 +156,7 @@
         "openrouterCli.command": {
           "type": "string",
           "default": "orc",
-          "description": "Command used to run openrouter-cli."
+          "description": "Command used to run OpenRouter CLI."
         }
       }
     }
